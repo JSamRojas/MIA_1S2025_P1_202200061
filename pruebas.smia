@@ -9,3 +9,6 @@ mKdisk -uniT=k -size=51200 -fit=BF -path=/home/mario/Descargas/DiscosPruebas/Dis
 mkDisk -size=14  -path=/home/mario/Descargas/DiscosPruebas/Disco3.mia                                  # 14M C
 mkdIsk -Size=50000 -Unit=K -paTh=/home/mario/Descargas/DiscosPruebas/Disco4.mia                        # 50M D
 mkdiSk -sizE=20 -uniT=M -fit=WF -path=/home/mario/Descargas/DiscosPruebas/Disco5.mia                   # 20M E
+
+
+Mkdisk -siZe=10 -unit=M -fit=FF -path="/home/jsam_rojas/Descargas/Disco1.mia"

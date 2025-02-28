@@ -49,10 +49,13 @@ export function FileSimulator() {
           salida += `${Object.values(data.results).join("\n")}\n`;
         }
 
-        console.log(salida);
+        // Agrega los errores del comando al output
+        if(data.errors && typeof data.errors === 'object'){
+          salida += `${Object.values(data.errors).map(e => `Error - ${e}`).join("\n")}\n`;
+        }
 
       } catch (error) {
-        output += `Error en el servidor: ${error.message}\n`;
+        salida += `Error en el servidor: ${error.message}\n`;
         console.log(error);
       }
     }

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	analizador "server/Analyzer"
 	Utilities "server/Utilities"
 )
 
@@ -20,18 +21,17 @@ func handleAnalyze(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var inputs []string
-	//fmt.Println(inputs)
 	err := json.NewDecoder(r.Body).Decode(&inputs)
-	//fmt.Println(err)
 	if err != nil {
 		http.Error(w, "Error al decodificar el JSON", http.StatusBadRequest)
 		return
 	}
 
-	//fmt.Println(err)
+	results, errors := analizador.Analyzer(inputs)
 
 	response := map[string]interface{}{
-		"results": inputs,
+		"results": results,
+		"errors":  errors,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
