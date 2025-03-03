@@ -1,5 +1,7 @@
 package Structs
 
+import "fmt"
+
 type PARTITION struct {
 	Partition_status [1]byte
 	Partition_type   [1]byte
@@ -34,5 +36,30 @@ func (p *PARTITION) CreatePartition(partStart, partSize int, partType, partFit, 
 
 	// Se asigna el nombre de la particion
 	copy(p.Partition_name[:], partName)
+
+}
+
+func (p *PARTITION) MountPartition(number int, id string) error {
+
+	p.Partition_status[0] = '1'
+
+	copy(p.Partition_id[:], id)
+
+	return nil
+
+}
+
+func (p *PARTITION) Print() {
+
+	fmt.Printf("---------- PARTITION ----------\n")
+	fmt.Printf("Partition_status: %c\n", p.Partition_status[0])
+	fmt.Printf("Partition_type: %c\n", p.Partition_type[0])
+	fmt.Printf("Partition_fit: %c\n", p.Partition_fit[0])
+	fmt.Printf("Partition_start: %d\n", p.Partition_start)
+	fmt.Printf("Partition_size: %d\n", p.Partition_size)
+	fmt.Printf("Partition_name: %s\n", p.Partition_name)
+	fmt.Printf("Partition_number: %d\n", p.Partition_number)
+	fmt.Printf("Partition_id: %s\n", p.Partition_id)
+	fmt.Printf("---------- END PARTITION ----------\n")
 
 }

@@ -38,7 +38,7 @@ func Fdisk_Command(tokens []string) (*estructuras.FDISK, string, error) {
 
 			size, err := strconv.Atoi(value)
 			if err != nil || size <= 0 {
-				return nil, "ERROR: El tamaño de la particion debe ser un numero entero positivo", errors.New("El tamaño de la particion debe ser un numero entero positivo")
+				return nil, "ERROR: El tamaño de la particion debe ser un numero entero positivo", errors.New("el tamaño de la particion debe ser un numero entero positivo")
 			}
 			fdisk.Size = size
 
@@ -78,6 +78,7 @@ func Fdisk_Command(tokens []string) (*estructuras.FDISK, string, error) {
 			if value == "" {
 				return nil, "ERROR: El nombre de la particion no puede ser vacio", errors.New("el nombre de la particion no puede ser vacio")
 			}
+			fdisk.Name = value
 
 		default:
 
@@ -116,6 +117,18 @@ func Fdisk_Command(tokens []string) (*estructuras.FDISK, string, error) {
 		fmt.Println("Error al crear la particion: ", err)
 		return nil, msg, err
 	}
+
+	var mbrPrint estructuras.MBR
+
+	msg, err1 := mbrPrint.DeserializeMBR(fdisk.Path)
+	if err1 != nil {
+		fmt.Println("Error al leer el MBR: ", err1)
+		return nil, msg, err1
+	}
+
+	//mbrPrint.Print()
+	//fmt.Println(" ")
+	//mbrPrint.PrintPartitions()
 
 	return fdisk, "FDISK: Particion creada correctamente", nil
 

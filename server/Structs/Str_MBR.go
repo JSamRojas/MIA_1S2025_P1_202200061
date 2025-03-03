@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -39,10 +40,10 @@ func CreateMBR(disk *MKDISK, sizeB int) (string, error) {
 		Mbr_signature_disk: rand.Int31(),
 		Mbr_disk_fit:       [1]byte{fByte},
 		Mbr_partitions: [4]PARTITION{
-			{Partition_status: [1]byte{'0'}, Partition_type: [1]byte{'0'}, Partition_fit: [1]byte{'0'}, Partition_start: -1, Partition_size: -1, Partition_name: [16]byte{'0'}, Partition_number: 0, Partition_id: [4]byte{'0'}},
-			{Partition_status: [1]byte{'0'}, Partition_type: [1]byte{'0'}, Partition_fit: [1]byte{'0'}, Partition_start: -1, Partition_size: -1, Partition_name: [16]byte{'0'}, Partition_number: 0, Partition_id: [4]byte{'0'}},
-			{Partition_status: [1]byte{'0'}, Partition_type: [1]byte{'0'}, Partition_fit: [1]byte{'0'}, Partition_start: -1, Partition_size: -1, Partition_name: [16]byte{'0'}, Partition_number: 0, Partition_id: [4]byte{'0'}},
-			{Partition_status: [1]byte{'0'}, Partition_type: [1]byte{'0'}, Partition_fit: [1]byte{'0'}, Partition_start: -1, Partition_size: -1, Partition_name: [16]byte{'0'}, Partition_number: 0, Partition_id: [4]byte{'0'}},
+			{Partition_status: [1]byte{'2'}, Partition_type: [1]byte{'0'}, Partition_fit: [1]byte{'0'}, Partition_start: -1, Partition_size: -1, Partition_name: [16]byte{'0'}, Partition_number: 0, Partition_id: [4]byte{'0'}},
+			{Partition_status: [1]byte{'2'}, Partition_type: [1]byte{'0'}, Partition_fit: [1]byte{'0'}, Partition_start: -1, Partition_size: -1, Partition_name: [16]byte{'0'}, Partition_number: 0, Partition_id: [4]byte{'0'}},
+			{Partition_status: [1]byte{'2'}, Partition_type: [1]byte{'0'}, Partition_fit: [1]byte{'0'}, Partition_start: -1, Partition_size: -1, Partition_name: [16]byte{'0'}, Partition_number: 0, Partition_id: [4]byte{'0'}},
+			{Partition_status: [1]byte{'2'}, Partition_type: [1]byte{'0'}, Partition_fit: [1]byte{'0'}, Partition_start: -1, Partition_size: -1, Partition_name: [16]byte{'0'}, Partition_number: 0, Partition_id: [4]byte{'0'}},
 		},
 	}
 
@@ -53,7 +54,7 @@ func CreateMBR(disk *MKDISK, sizeB int) (string, error) {
 		return msg, err
 	}
 
-	mbr.Print()
+	//mbr.Print()
 
 	return "", nil
 
@@ -125,14 +126,81 @@ func (mbr *MBR) GetFirstPartitionAvaible() (*PARTITION, int, int, string) {
 	return nil, -1, -1, ""
 }
 
+func (mbr *MBR) GetPartitionByName(name string, path string) (*PARTITION, int, string) {
+
+	for i, partition := range mbr.Mbr_partitions {
+
+		partition_name := strings.Trim(string(partition.Partition_name[:]), "\x00")
+
+		inputName := strings.Trim(name, "\x00")
+
+		if strings.EqualFold(partition_name, inputName) {
+			return &partition, i, ""
+		}
+
+	}
+
+	return nil, -1, "No se encontro la particion con el nombre: " + name
+
+}
+
+func (mbr *MBR) UpdatePartitionNumber() {
+
+	number := 1
+
+	for i := 0; i < len(mbr.Mbr_partitions); i++ {
+
+		partition := &mbr.Mbr_partitions[i]
+
+		if partition.Partition_status[0] != 0 && partition.Partition_type[0] == 'P' {
+			partition.Partition_number = int32(number)
+			number++
+		} else if partition.Partition_type[0] == 'E' {
+			partition.Partition_number = 0
+		}
+	}
+
+}
+
 func (mbr *MBR) Print() {
 
 	creationTime := time.Unix(int64(mbr.Mbr_date), 0)
 
 	diskFit := rune(mbr.Mbr_disk_fit[0])
 
+	fmt.Printf("---------- MBR ----------\n")
 	fmt.Printf("MBR Size: %d\n", mbr.Mbr_size)
 	fmt.Printf("Creation Date %s\n", creationTime.Format("02-01-2006 15:04:05"))
 	fmt.Printf("Disk Signature: %d\n", mbr.Mbr_signature_disk)
 	fmt.Printf("Disk Fit: %c\n", diskFit)
+	fmt.Printf("---------- END MBR ----------\n")
+}
+
+func (mbr *MBR) PrintPartitions() {
+	for i, partition := range mbr.Mbr_partitions {
+
+		partition_status := rune(partition.Partition_status[0])
+		partition_type := rune(partition.Partition_type[0])
+		partition_fit := rune(partition.Partition_fit[0])
+
+		partition_name := string(partition.Partition_name[:])
+
+		partition_id := string(partition.Partition_id[:])
+
+		if partition_status == '2' {
+			continue
+		}
+
+		fmt.Printf("---------- PARTITION %d ----------\n", i+1)
+		fmt.Printf("Partition_status: %c\n", partition_status)
+		fmt.Printf("Partition_type: %c\n", partition_type)
+		fmt.Printf("Partition_fit: %c\n", partition_fit)
+		fmt.Printf("Partition_start: %d\n", partition.Partition_start)
+		fmt.Printf("Partition_size: %d\n", partition.Partition_size)
+		fmt.Printf("Partition_name: %s\n", partition_name)
+		fmt.Printf("Partition_number: %d\n", partition.Partition_number)
+		fmt.Printf("Partition_id: %s\n", partition_id)
+		fmt.Printf("---------- END PARTITION %d ----------\n", i+1)
+
+	}
 }

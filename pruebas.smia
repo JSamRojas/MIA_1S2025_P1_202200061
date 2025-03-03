@@ -1,14 +1,20 @@
-#ENTRADA PRIMER PARTE MIA
-#2S 2024
+Mkdisk -siZe=5 -unit=M -fit=FF -path="/home/jsam_rojas/Descargas/Disco1.mia"
+Mkdisk -siZe=5 -unit=M -fit=FF -path="/home/jsam_rojas/Descargas/Disco2.mia"
 
-#CAMBIAR LOS IDS
+fdisk -Size=30 -unit=K -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion1
+fdisk -type=E -path="/home/jsam_rojas/Descargas/Disco1.mia" -Unit=K -name=Particion2 -size=30
+fdisk -Size=30 -unit=K -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion3
 
-#CREACION DE DISCOS---------------------------------------------------
-Mkdisk -siZe=10 -unit=M -fit=FF -path="/home/mario/Descargas/DiscosPruebas/Disco1.mia"                 # 1M A
-mKdisk -uniT=k -size=51200 -fit=BF -path=/home/mario/Descargas/DiscosPruebas/Disco2.mia                # 50M B
-mkDisk -size=14  -path=/home/mario/Descargas/DiscosPruebas/Disco3.mia                                  # 14M C
-mkdIsk -Size=50000 -Unit=K -paTh=/home/mario/Descargas/DiscosPruebas/Disco4.mia                        # 50M D
-mkdiSk -sizE=20 -uniT=M -fit=WF -path=/home/mario/Descargas/DiscosPruebas/Disco5.mia                   # 20M E
+fdisk -Size=30 -unit=K -path="/home/jsam_rojas/Descargas/Disco2.mia" -name=Particion1
+fdisk -Size=30 -unit=K -path="/home/jsam_rojas/Descargas/Disco2.mia" -name=Particion2
+fdisk -Size=30 -unit=K -path="/home/jsam_rojas/Descargas/Disco2.mia" -name=Particion3
 
+fdisk -size=1 -type=L -unit=k -fit=BF -path="/home/jsam_rojas/Descargas/Disco1.mia" -name="Particion3"
+fdisk -size=1 -type=L -unit=k -fit=BF -path="/home/jsam_rojas/Descargas/Disco1.mia" -name="Particion4"
 
-Mkdisk -siZe=10 -unit=M -fit=FF -path="/home/jsam_rojas/Descargas/Disco1.mia"
+mount -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion1
+mount -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion3
+
+mount -path="/home/jsam_rojas/Descargas/Disco2.mia" -name=Particion1
+mount -path="/home/jsam_rojas/Descargas/Disco2.mia" -name=Particion2
+mount -path="/home/jsam_rojas/Descargas/Disco2.mia" -name=Particion3

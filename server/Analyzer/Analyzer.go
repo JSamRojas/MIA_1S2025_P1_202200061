@@ -46,8 +46,14 @@ func Analyzer(inputs []string) ([]string, []string) {
 	case "fdisk":
 		_, msg, err = commands.Fdisk_Command(tokens[1:])
 
+	case "mount":
+		_, msg, err = commands.Mount_Command(tokens[1:])
+
+	case "mounted":
+		msg, err = commands.Mounted_Command(tokens[1:])
+
 	default:
-		err = fmt.Errorf("Comando no reconocido: %s", tokens[0])
+		err = fmt.Errorf("comando no reconocido: %s", tokens[0])
 	}
 
 	if err != nil {

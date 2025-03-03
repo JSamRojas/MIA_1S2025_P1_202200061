@@ -66,6 +66,7 @@ export function FileSimulator() {
 
   const handleClear = () => {
     setFileContent("");
+    setOutput("");
   };
 
   return (

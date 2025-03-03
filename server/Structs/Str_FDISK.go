@@ -236,6 +236,8 @@ func C_logicalPartition(fdisk *FDISK, sizeBytes int) (string, error) {
 			return msg, err
 		}
 
+		logicalPartition.Print()
+
 		return "FDISK: Particion logica y EBR creados correctamente", nil
 
 	}
@@ -276,9 +278,14 @@ func C_logicalPartition(fdisk *FDISK, sizeBytes int) (string, error) {
 	}
 	copy(ebrNew.Partition_name[:], []byte(fdisk.Name))
 
-	_, err = file.Seek(int64(newEBRstart), 0)
+	_, err = file.Seek(int64(ebrNew.Partition_start), 0)
 	if err != nil {
 		return "ERROR: No se pudo posicionar en el nuevo EBR", err
+	}
+
+	err = binary.Write(file, binary.LittleEndian, &ebrNew)
+	if err != nil {
+		return "ERROR: No se pudo escribir el nuevo EBR", err
 	}
 
 	logicalStart := newEBRstart + int32(binary.Size(ebrNew))
@@ -289,7 +296,7 @@ func C_logicalPartition(fdisk *FDISK, sizeBytes int) (string, error) {
 
 	logicalPartition.Partition_id = extendedPartition.Partition_id
 
-	_, err = file.Seek(int64(newEBRstart), 0)
+	_, err = file.Seek(int64(logicalStart), 0)
 	if err != nil {
 		return "ERROR: No se pudo posicionar al inicio de la particion logica", err
 	}
@@ -300,11 +307,92 @@ func C_logicalPartition(fdisk *FDISK, sizeBytes int) (string, error) {
 		return "ERROR: No se pudo escribir la particion logica", err
 	}
 
+	logicalPartition.Print()
+
 	msg, err = part_mbr.SerializeMBR(fdisk.Path)
 	if err != nil {
 		return msg, err
 	}
 
+	msg1, err := PrintEBR(fdisk)
+	if err != nil {
+		fmt.Println("Error al imprimir los EBR: ", err)
+	} else {
+		fmt.Println(msg1)
+	}
+
 	return "FDISK: EBR creado correctamente", nil
+
+}
+
+func PrintEBR(fdisk *FDISK) (string, error) {
+
+	var mbr MBR
+
+	msg, err := mbr.DeserializeMBR(fdisk.Path)
+	if err != nil {
+		return msg, fmt.Errorf("error: no se pudo leer el disco: %s", err)
+	}
+
+	var extendedPart *PARTITION
+	for _, partition := range mbr.Mbr_partitions {
+		if partition.Partition_type[0] == 'E' {
+			extendedPart = &partition
+			break
+		}
+	}
+
+	if extendedPart == nil {
+		return "ERROR: No existe una particion extendida", nil
+	}
+
+	file, err := os.OpenFile(fdisk.Path, os.O_RDONLY, 0644)
+	if err != nil {
+		return "ERROR: No se pudo abrir el disco", err
+	}
+	defer file.Close()
+
+	_, err = file.Seek(int64(extendedPart.Partition_start), 0)
+	if err != nil {
+		return "ERROR: No se pudo posicionar en la particion extendida", err
+	}
+
+	for {
+
+		var ebr EBR
+		err = binary.Read(file, binary.LittleEndian, &ebr)
+		if err != nil {
+			return "ERROR: No se pudo leer el EBR", err
+		}
+
+		if ebr.Partition_size == 0 {
+			break
+		}
+
+		fmt.Printf("\n---------- EBR ----------\n")
+		fmt.Printf("Partition_name: %s\n", ebr.Partition_name[:])
+		fmt.Printf("Partition_start: %d\n", ebr.Partition_start)
+		fmt.Printf("Partition_size: %d\n", ebr.Partition_size)
+		fmt.Printf("Partition_next: %d\n", ebr.Partition_next)
+
+		logicStart := ebr.Partition_start + int32(binary.Size(ebr))
+		fmt.Printf("---------- LOGIC START ----------\n")
+		fmt.Printf("Partition_start: %d\n", logicStart)
+		fmt.Printf("Partition_size: %d\n", ebr.Partition_size)
+		fmt.Printf("---------- LOGIC END ----------\n")
+
+		if ebr.Partition_next == -1 {
+			fmt.Printf("---------- END EBR ----------\n")
+			break
+		}
+
+		_, err = file.Seek(int64(ebr.Partition_next), 0)
+		if err != nil {
+			return "Error: No se pudo posicionar en el siguiente EBR", err
+		}
+
+	}
+
+	return "EBRs impresos correctamente", nil
 
 }
