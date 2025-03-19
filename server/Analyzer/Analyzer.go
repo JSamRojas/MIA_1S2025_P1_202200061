@@ -52,6 +52,12 @@ func Analyzer(inputs []string) ([]string, []string) {
 	case "mounted":
 		msg, err = commands.Mounted_Command(tokens[1:])
 
+	case "mkfs":
+		_, msg, err = commands.Mkfs_Command(tokens[1:])
+
+	case "rep":
+		_, msg, err = commands.Rep_Command(tokens[1:])
+
 	default:
 		err = fmt.Errorf("comando no reconocido: %s", tokens[0])
 	}

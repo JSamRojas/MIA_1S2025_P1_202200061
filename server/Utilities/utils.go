@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 const Carnet string = "61" //202200061
@@ -52,4 +54,21 @@ func GetLetra(path string) (string, error) {
 	}
 	return pathToLetter[path], nil
 
+}
+
+func Create_Parent_Dir(path string) error {
+	dir := filepath.Dir(path)
+	err := os.MkdirAll(dir, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("error al crear el directorio padre: %s", err)
+	}
+	return nil
+}
+
+func Get_File_Names(path string) (string, string) {
+	dir := filepath.Dir(path)
+	baseName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+	dotFileName := filepath.Join(dir, baseName+".dot")
+	outputImage := path
+	return dotFileName, outputImage
 }

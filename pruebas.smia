@@ -9,8 +9,8 @@ fdisk -Size=30 -unit=K -path="/home/jsam_rojas/Descargas/Disco2.mia" -name=Parti
 fdisk -Size=30 -unit=K -path="/home/jsam_rojas/Descargas/Disco2.mia" -name=Particion2
 fdisk -Size=30 -unit=K -path="/home/jsam_rojas/Descargas/Disco2.mia" -name=Particion3
 
-fdisk -size=1 -type=L -unit=k -fit=BF -path="/home/jsam_rojas/Descargas/Disco1.mia" -name="Particion3"
 fdisk -size=1 -type=L -unit=k -fit=BF -path="/home/jsam_rojas/Descargas/Disco1.mia" -name="Particion4"
+fdisk -size=1 -type=L -unit=k -fit=BF -path="/home/jsam_rojas/Descargas/Disco1.mia" -name="Particion5"
 
 mount -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion1
 mount -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion3
@@ -18,3 +18,16 @@ mount -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion3
 mount -path="/home/jsam_rojas/Descargas/Disco2.mia" -name=Particion1
 mount -path="/home/jsam_rojas/Descargas/Disco2.mia" -name=Particion2
 mount -path="/home/jsam_rojas/Descargas/Disco2.mia" -name=Particion3
+
+rep -id=611A -path=/home/jsam_rojas/Descargas/reporteMBR.jpg -name=mbr
+
+Mkdisk -siZe=5 -unit=M -fit=FF -path="/home/jsam_rojas/Descargas/Disco1.mia"
+fdisk -Size=1 -unit=M -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion1
+fdisk -type=E -path="/home/jsam_rojas/Descargas/Disco1.mia" -Unit=M -name=Particion2 -size=1
+fdisk -Size=1 -unit=M -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion3
+fdisk -size=30 -type=L -unit=k -fit=BF -path="/home/jsam_rojas/Descargas/Disco1.mia" -name="Particion4"
+fdisk -size=30 -type=L -unit=k -fit=BF -path="/home/jsam_rojas/Descargas/Disco1.mia" -name="Particion5"
+mount -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion1
+mount -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion3
+
+rep -id=611A -path=/home/jsam_rojas/Descargas/reporteMBR.jpg -name=disk

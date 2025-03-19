@@ -3,6 +3,7 @@ package Structs
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -142,6 +143,18 @@ func (mbr *MBR) GetPartitionByName(name string, path string) (*PARTITION, int, s
 
 	return nil, -1, "No se encontro la particion con el nombre: " + name
 
+}
+
+func (mbr *MBR) GetPartitionByID(id string) (*PARTITION, error) {
+
+	for i := 0; i < len(mbr.Mbr_partitions); i++ {
+		partitionID := strings.Trim(string(mbr.Mbr_partitions[i].Partition_id[:]), "\x00")
+		inputID := strings.Trim(id, "\x00")
+		if strings.EqualFold(partitionID, inputID) {
+			return &mbr.Mbr_partitions[i], nil
+		}
+	}
+	return nil, errors.New("No se encontro la particion con el id: " + id)
 }
 
 func (mbr *MBR) UpdatePartitionNumber() {
