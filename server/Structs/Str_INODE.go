@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"os"
+	"time"
 )
 
 type INODE struct {
@@ -80,5 +81,24 @@ func (inode *INODE) Deserialize(path string, offset int64) error {
 	}
 
 	return nil
+
+}
+
+// Funcion para imprimir los atributos del Inode
+func (inode *INODE) Print() {
+
+	atime := time.Unix(int64(inode.I_atime), 0)
+	ctime := time.Unix(int64(inode.I_ctime), 0)
+	mtime := time.Unix(int64(inode.I_mtime), 0)
+
+	fmt.Printf("I_uid: %d\n", inode.I_uid)
+	fmt.Printf("I_gid: %d\n", inode.I_gid)
+	fmt.Printf("I_size: %d\n", inode.I_size)
+	fmt.Printf("I_atime: %s\n", atime.Format(time.RFC3339))
+	fmt.Printf("I_ctime: %s\n", ctime.Format(time.RFC3339))
+	fmt.Printf("I_mtime: %s\n", mtime.Format(time.RFC3339))
+	fmt.Printf("I_block: %v\n", inode.I_block)
+	fmt.Printf("I_type: %s\n", string(inode.I_type[:]))
+	fmt.Printf("I_perm: %s\n", string(inode.I_perm[:]))
 
 }

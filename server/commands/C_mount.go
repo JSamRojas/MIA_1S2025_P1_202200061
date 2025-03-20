@@ -123,7 +123,7 @@ func MountP(mount *MOUNT) (string, error) {
 		return msg, fmt.Errorf("error escribiendo el MBR del disco: %s", err)
 	}
 
-	mbr.PrintPartitions()
+	//mbr.PrintPartitions()
 
 	return "", nil
 

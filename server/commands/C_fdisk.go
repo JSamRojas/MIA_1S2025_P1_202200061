@@ -118,13 +118,15 @@ func Fdisk_Command(tokens []string) (*estructuras.FDISK, string, error) {
 		return nil, msg, err
 	}
 
-	var mbrPrint estructuras.MBR
+	/*
+		var mbrPrint estructuras.MBR
 
-	msg, err1 := mbrPrint.DeserializeMBR(fdisk.Path)
-	if err1 != nil {
-		fmt.Println("Error al leer el MBR: ", err1)
-		return nil, msg, err1
-	}
+		msg, err1 := mbrPrint.DeserializeMBR(fdisk.Path)
+		if err1 != nil {
+			fmt.Println("Error al leer el MBR: ", err1)
+			return nil, msg, err1
+		}
+	*/
 
 	//mbrPrint.Print()
 	//fmt.Println(" ")

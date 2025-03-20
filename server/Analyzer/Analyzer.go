@@ -55,6 +55,15 @@ func Analyzer(inputs []string) ([]string, []string) {
 	case "mkfs":
 		_, msg, err = commands.Mkfs_Command(tokens[1:])
 
+	case "cat":
+		_, msg, err = commands.Cat_Command(tokens[1:])
+
+	case "login":
+		_, msg, err = commands.Login_Command(tokens[1:])
+
+	case "logout":
+		_, msg, err = commands.Logout_Command(tokens[1:])
+
 	case "rep":
 		_, msg, err = commands.Rep_Command(tokens[1:])
 

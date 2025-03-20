@@ -19,7 +19,13 @@ mount -path="/home/jsam_rojas/Descargas/Disco2.mia" -name=Particion1
 mount -path="/home/jsam_rojas/Descargas/Disco2.mia" -name=Particion2
 mount -path="/home/jsam_rojas/Descargas/Disco2.mia" -name=Particion3
 
+mount -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion3
+
 rep -id=611A -path=/home/jsam_rojas/Descargas/reporteMBR.jpg -name=mbr
+
+rep -id=611A -path=/home/jsam_rojas/Descargas/reporteDISK.jpg -name=disk
+
+
 
 Mkdisk -siZe=5 -unit=M -fit=FF -path="/home/jsam_rojas/Descargas/Disco1.mia"
 fdisk -Size=1 -unit=M -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion1
@@ -28,6 +34,8 @@ fdisk -Size=1 -unit=M -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Partic
 fdisk -size=30 -type=L -unit=k -fit=BF -path="/home/jsam_rojas/Descargas/Disco1.mia" -name="Particion4"
 fdisk -size=30 -type=L -unit=k -fit=BF -path="/home/jsam_rojas/Descargas/Disco1.mia" -name="Particion5"
 mount -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion1
-mount -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion3
+mkfs -type="full" -id=611A
 
-rep -id=611A -path=/home/jsam_rojas/Descargas/reporteMBR.jpg -name=disk
+login -user=root -pass=123 -id=611A
+
+logout

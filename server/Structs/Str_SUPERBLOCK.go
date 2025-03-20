@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"os"
+	"time"
 )
 
 type SUPERBLOCK struct {
@@ -84,4 +85,29 @@ func (sb *SUPERBLOCK) Deserialize(path string, offset int64) error {
 
 	return nil
 
+}
+
+// Funcion para imprimir los valores del superblock
+func (sb *SUPERBLOCK) Print() {
+
+	mount_Time := time.Unix(int64(sb.Sb_mtime), 0)
+	unmount_Time := time.Unix(int64(sb.Sb_umtime), 0)
+
+	fmt.Printf("Filesystem type: %d\n", sb.Sb_filesystem_type)
+	fmt.Printf("Inodes Count: %d\n", sb.Sb_inodes_count)
+	fmt.Printf("Blocks Count: %d\n", sb.Sb_blocks_count)
+	fmt.Printf("Free Inodes Count: %d\n", sb.Sb_free_inodes_count)
+	fmt.Printf("Free Blocks Count: %d\n", sb.Sb_free_blocks_count)
+	fmt.Printf("Mount time: %s\n", mount_Time.Format(time.RFC3339))
+	fmt.Printf("UnMount time: %s\n", unmount_Time.Format(time.RFC3339))
+	fmt.Printf("Mount Count: %d\n", sb.Sb_mnt_count)
+	fmt.Printf("Magic: %d\n", sb.Sb_magic)
+	fmt.Printf("Inode Size: %d\n", sb.Sb_inode_size)
+	fmt.Printf("Block Size: %d\n", sb.Sb_block_size)
+	fmt.Printf("First Inode: %d\n", sb.Sb_first_ino)
+	fmt.Printf("First Block: %d\n", sb.Sb_first_blo)
+	fmt.Printf("Bitmap Inode Start: %d\n", sb.Sb_bm_inode_start)
+	fmt.Printf("Bitmap Block Start: %d\n", sb.Sb_bm_block_start)
+	fmt.Printf("Inode Start: %d\n", sb.Sb_inode_start)
+	fmt.Printf("Block Start: %d\n", sb.Sb_block_start)
 }

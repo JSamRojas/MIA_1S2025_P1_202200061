@@ -78,3 +78,13 @@ func (folderblock *FOLDERBLOCK) Deserialize(path string, offset int64) error {
 	return nil
 
 }
+
+// Funcion para imprimir los atributos del folder block
+func (folderblock *FOLDERBLOCK) Print() {
+	for i, content := range folderblock.B_content {
+		name := string(content.B_name[:])
+		fmt.Printf("Contenido %d: \n", i+1)
+		fmt.Printf("	B_name: %s\n", name)
+		fmt.Printf("	B_inodo: %d\n", content.B_inodo)
+	}
+}

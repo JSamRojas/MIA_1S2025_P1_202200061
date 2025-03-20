@@ -236,7 +236,7 @@ func C_logicalPartition(fdisk *FDISK, sizeBytes int) (string, error) {
 			return msg, err
 		}
 
-		logicalPartition.Print()
+		//logicalPartition.Print()
 
 		return "FDISK: Particion logica y EBR creados correctamente", nil
 
@@ -307,19 +307,19 @@ func C_logicalPartition(fdisk *FDISK, sizeBytes int) (string, error) {
 		return "ERROR: No se pudo escribir la particion logica", err
 	}
 
-	logicalPartition.Print()
+	//logicalPartition.Print()
 
-	msg, err = part_mbr.SerializeMBR(fdisk.Path)
-	if err != nil {
-		return msg, err
-	}
+	// msg, err = part_mbr.SerializeMBR(fdisk.Path)
+	// if err != nil {
+	// 	return msg, err
+	// }
 
-	msg1, err := PrintEBR(fdisk)
-	if err != nil {
-		fmt.Println("Error al imprimir los EBR: ", err)
-	} else {
-		fmt.Println(msg1)
-	}
+	// msg1, err := PrintEBR(fdisk)
+	// if err != nil {
+	// 	fmt.Println("Error al imprimir los EBR: ", err)
+	// } else {
+	// 	fmt.Println(msg1)
+	// }
 
 	return "FDISK: EBR creado correctamente", nil
 

@@ -65,6 +65,33 @@ func Create_Parent_Dir(path string) error {
 	return nil
 }
 
+// Funcion para obtener las carpetas padres y el directorio destino
+func Get_Parent_Dirs(path string) ([]string, string) {
+
+	/*
+		Se estandariza el path, eliminando redundancias
+		//home//user///docs → /home/user/docs
+	*/
+	path = filepath.Clean(path)
+
+	// Dividir el path en partes
+	directories := strings.Split(path, string(filepath.Separator))
+
+	// Se crea una lista para almacenar las rutas de los directorios padre
+	var parent_Dir []string
+
+	// Se generarn las ruta de las carpetas padres, excluyendo el ultimo directorio
+	for i := 1; i < len(directories)-1; i++ {
+		parent_Dir = append(parent_Dir, directories[i])
+	}
+
+	// El ultimo elemento es el destino
+	dest_Dir := directories[len(directories)-1]
+
+	return parent_Dir, dest_Dir
+
+}
+
 func Get_File_Names(path string) (string, string) {
 	dir := filepath.Dir(path)
 	baseName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))

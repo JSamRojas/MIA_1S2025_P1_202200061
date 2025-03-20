@@ -1,6 +1,8 @@
 package Structs
 
-import "time"
+import (
+	"time"
+)
 
 // Funcion para crear el archivo de usuarios para el superblock (users.txt)
 func (superblock *SUPERBLOCK) Create_UsersTXT(path string) error {
@@ -62,6 +64,14 @@ func (superblock *SUPERBLOCK) Create_UsersTXT(path string) error {
 	superblock.Sb_blocks_count++
 	superblock.Sb_free_blocks_count--
 	superblock.Sb_first_blo += superblock.Sb_block_size
+
+	// Verificamos el Inode root
+	//fmt.Println("\n INODE ROOT: ")
+	//root_Inode.Print()
+
+	// Verificamos el fileblock root
+	//fmt.Println("\n FOLDERBLOCK ROOT: ")
+	//root_Block.Print()
 
 	/*
 		Se crea el archivo userts.txt
@@ -153,6 +163,22 @@ func (superblock *SUPERBLOCK) Create_UsersTXT(path string) error {
 	superblock.Sb_blocks_count++
 	superblock.Sb_free_blocks_count--
 	superblock.Sb_first_blo += superblock.Sb_block_size
+
+	// Verificar el Inode root
+	//fmt.Println("\n INODE root Actualizado: ")
+	//root_Inode.Print()
+
+	// Verificar el folerblock del root
+	//fmt.Println("\n FOLDERBLOCK root actualizado: ")
+	//root_Block.Print()
+
+	// Verificar el inode users.txt
+	//fmt.Print("\n INODE users.txt: ")
+	//users_Inode.Print()
+
+	// Verificar el fileblock de users.txt
+	//fmt.Print("\n FILEBLOCK de users.txt: ")
+	//users_Block.Print()
 
 	return nil
 

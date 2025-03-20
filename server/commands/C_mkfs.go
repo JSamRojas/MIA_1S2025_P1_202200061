@@ -69,7 +69,7 @@ func Mkfs_Command(tokens []string) (*MKFS, string, error) {
 
 	err := Create_MKFS(mkfs)
 	if err != nil {
-		fmt.Println("Error: ", err)
+		return nil, "", err
 	}
 
 	return mkfs, "COMANDO MKFS: particion formateada con exito", nil
@@ -89,6 +89,10 @@ func Create_MKFS(mkfs *MKFS) error {
 	// Se crea el superbloque
 	super_Block := Create_SuperBlock(mounted_Part, n_Value)
 
+	//Verificamos el superblock
+	//fmt.Println("\nSUPERBLOCK: ")
+	//super_Block.Print()
+
 	// Se crean los bitmaps
 	err = super_Block.Create_Bit_Maps(part_Path)
 	if err != nil {
@@ -100,6 +104,10 @@ func Create_MKFS(mkfs *MKFS) error {
 	if err != nil {
 		return err
 	}
+
+	// Verificamos el superblock actualizado
+	//fmt.Println("\n SUPERBLOCK ACTUALIZADO: ")
+	//super_Block.Print()
 
 	// Serializar el superblock
 	err = super_Block.Serialize(part_Path, int64(mounted_Part.Partition_start))
