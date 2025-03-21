@@ -25,17 +25,17 @@ rep -id=611A -path=/home/jsam_rojas/Descargas/reporteMBR.jpg -name=mbr
 
 rep -id=611A -path=/home/jsam_rojas/Descargas/reporteDISK.jpg -name=disk
 
-
-
-Mkdisk -siZe=5 -unit=M -fit=FF -path="/home/jsam_rojas/Descargas/Disco1.mia"
-fdisk -Size=1 -unit=M -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion1
-fdisk -type=E -path="/home/jsam_rojas/Descargas/Disco1.mia" -Unit=M -name=Particion2 -size=1
-fdisk -Size=1 -unit=M -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion3
-fdisk -size=30 -type=L -unit=k -fit=BF -path="/home/jsam_rojas/Descargas/Disco1.mia" -name="Particion4"
-fdisk -size=30 -type=L -unit=k -fit=BF -path="/home/jsam_rojas/Descargas/Disco1.mia" -name="Particion5"
+Mkdisk -siZe=10 -unit=M -fit=FF -path="/home/jsam_rojas/Descargas/Disco1.mia"
+fdisk -type=P -Size=1 -unit=M -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion1
+fdisk -type=E -path="/home/jsam_rojas/Descargas/Disco1.mia" -Unit=M -name=Particion2 -size=7
+fdisk -type=P -Size=1 -unit=M -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion3
+fdisk -size=1 -type=L -unit=M -fit=BF -path="/home/jsam_rojas/Descargas/Disco1.mia" -name="Particion4"
+fdisk -size=1 -type=L -unit=M -fit=BF -path="/home/jsam_rojas/Descargas/Disco1.mia" -name="Particion5"
 mount -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion1
 mkfs -type="full" -id=611A
-
 login -user=root -pass=123 -id=611A
+mkgrp -name=grupo1
+mkusr -user=user1 -pass=45 -grp=grupo1
+cat -file1="/users.txt"
 
 logout

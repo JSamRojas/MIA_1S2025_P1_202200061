@@ -99,7 +99,7 @@ func ReporteDISK(mbr *estructuras.MBR, path string, diskPath string) error {
 				<td bgcolor="#D27D2D" border="1" color="black">EBR</td>
 				<td bgcolor="#C2B280" border="1" color="black">Logica<br/>%s<br/>%.2f%% del Disco</td>`, ebr_Name, ebr_Percent)
 
-				total_Size += ebr_Size + ebr_Size // Considerando un EBR y una particion logica
+				space_Used += ebr_Size + ebr_Size // Considerando un EBR y una particion logica
 
 				if ebr.Partition_next == -1 {
 

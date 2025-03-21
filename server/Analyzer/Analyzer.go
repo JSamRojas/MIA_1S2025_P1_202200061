@@ -64,6 +64,15 @@ func Analyzer(inputs []string) ([]string, []string) {
 	case "logout":
 		_, msg, err = commands.Logout_Command(tokens[1:])
 
+	case "mkgrp":
+		_, msg, err = commands.Mkgrp_Command(tokens[1:])
+
+	case "rmgrp":
+		_, msg, err = commands.Rmgrp_Command(tokens[1:])
+
+	case "mkusr":
+		_, msg, err = commands.Mkusr_Command(tokens[1:])
+
 	case "rep":
 		_, msg, err = commands.Rep_Command(tokens[1:])
 

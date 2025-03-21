@@ -64,20 +64,31 @@ func C_primaryPartition(fdisk *FDISK, sizeBytes int) (string, error) {
 		return msg, fmt.Errorf("ERROR: No se pudo leer el MBR del disco: %s", err)
 	}
 
+	// variable para sumar el espacio usado en el disco
+	space_used := 0
+
 	primaryParts := 0
 	for _, partition := range part_mbr.Mbr_partitions {
 		if partition.Partition_status[0] != '2' {
 			if partition.Partition_type[0] == 'P' || partition.Partition_type[0] == 'E' {
+				space_used += int(partition.Partition_size)
 				primaryParts++
 			}
 		}
 	}
+
+	// variable para saber el espacio libre en el disco
+	free_space := int(part_mbr.Mbr_size) - space_used
 
 	if primaryParts >= 4 {
 		return "ERROR: Ya existen 4 particiones primarias", fmt.Errorf("ya existen 4 particiones primarias")
 	}
 
 	if sizeBytes > int(part_mbr.Mbr_size) {
+		return "ERROR: El tamaño de la particion es mayor al tamaño disponible en el disco", fmt.Errorf("el tamaño de la particion es mayor al tamaño disponible en el disco")
+	}
+
+	if sizeBytes > free_space {
 		return "ERROR: El tamaño de la particion es mayor al tamaño disponible en el disco", fmt.Errorf("el tamaño de la particion es mayor al tamaño disponible en el disco")
 	}
 
@@ -242,6 +253,9 @@ func C_logicalPartition(fdisk *FDISK, sizeBytes int) (string, error) {
 
 	}
 
+	// variable para juntar el espacio ocupado dentro de la particion extendida
+	size_used := int64(ebr.Partition_size)
+
 	// Si ya existe un EBR en la particion extendida, se busca el ultimo EBR
 
 	for ebr.Partition_next != -1 {
@@ -253,6 +267,16 @@ func C_logicalPartition(fdisk *FDISK, sizeBytes int) (string, error) {
 		if err != nil {
 			return "ERROR: No se pudo leer el siguiente EBR", err
 		}
+
+		size_used += int64(ebr.Partition_size)
+	}
+
+	// obtenemos el espacio usado dentro de la particion extendida
+	free_size := extendedPartition.Partition_size - int32(size_used)
+
+	// verificamos que la particion no sea mayor al espacio disponible
+	if sizeBytes > int(free_size) {
+		return "ERROR: El tamaño de la particion logica es mayor al tamaño disponible en la particion extendida", fmt.Errorf("el tamaño de la particion logica es mayor al tamaño disponible en la particion extendida")
 	}
 
 	newEBRstart := ebr.Partition_start + ebr.Partition_size + int32(binary.Size(ebr))

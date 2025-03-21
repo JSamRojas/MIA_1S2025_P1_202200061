@@ -76,3 +76,18 @@ func Is_any_session_Active() bool {
 	}
 	return false
 }
+
+func Get_user_Active(partition_Id string) string {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if users, exists := sessions_Map[partition_Id]; exists {
+		for user, active := range users {
+			if active {
+				return user
+			}
+		}
+	}
+
+	return ""
+}

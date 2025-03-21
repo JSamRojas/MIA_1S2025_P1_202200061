@@ -15,7 +15,7 @@ type PARTITION struct {
 
 func (p *PARTITION) CreatePartition(partStart, partSize int, partType, partFit, partName string) {
 
-	// 0 = particion creada, 1 = particion activa, 2 = particion disponible
+	// 0 = particion creada, 1 = particion montada, 2 = particion disponible
 	p.Partition_status[0] = '0'
 
 	// Byte del inicio de la particion
