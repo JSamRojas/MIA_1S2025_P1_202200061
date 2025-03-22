@@ -35,7 +35,13 @@ mount -path="/home/jsam_rojas/Descargas/Disco1.mia" -name=Particion1
 mkfs -type="full" -id=611A
 login -user=root -pass=123 -id=611A
 mkgrp -name=grupo1
+mkgrp -name=grupo2
+mkgrp -name=grupo3
+mkgrp -name=grupo4
 mkusr -user=user1 -pass=45 -grp=grupo1
+mkusr -user=user1 -pass=45 -grp=grupo1
+mkusr -user=user2 -pass=45 -grp=grupo7
+mkusr -user=user3 -pass=45 -grp=grupo4
 cat -file1="/users.txt"
 
 logout

@@ -105,6 +105,8 @@ func execute_Cat(cat *CAT) (string, error) {
 
 		if block != -1 {
 
+			//part_super_block.Print()
+
 			/*
 				verificar sobre los bloques del inode
 				recorriendolos hasta encontrar el que contiene el directorio
@@ -235,7 +237,7 @@ func recursive_Block(inode *estructuras.INODE, partition_superblock *estructuras
 
 	/*
 		-Se verifica en los bloques del inode
-		-Se recorren hasta encontrar el bloque que contiene la ruta para llegar    al  archivo
+		-Se recorren hasta encontrar el bloque que contiene la ruta para llegar al  archivo
 	*/
 
 	folderblock := &estructuras.FOLDERBLOCK{}

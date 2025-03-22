@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	estructuras "server/Structs"
+	util "server/Utilities"
 	global "server/global"
 	"strconv"
 	"strings"
@@ -77,7 +78,7 @@ func Create_Mkgrp(mkgrp *MKGRP) (string, error) {
 	}
 
 	// obtenemos la particion y el superblock de la misma donde se creara el grupo
-	partition_superblock, _, partition_path, err := global.Get_superblock_from_part(partition_id)
+	partition_superblock, mounted_partition, partition_path, err := global.Get_superblock_from_part(partition_id)
 	if err != nil {
 		return "ERROR COMANDO MKGRP: no se pudo obtener la particion para crear el grupo", fmt.Errorf("[error comando mkgrp] no se pudo obtener la particion para crear el grupo: %v", err)
 	}
@@ -112,24 +113,54 @@ func Create_Mkgrp(mkgrp *MKGRP) (string, error) {
 					return "ERROR COMANDO MKGRP: no se pudo obtener el inode de users.txt", fmt.Errorf("[error comando mkgrp] no se pudo obtener el inode de users.txt: %v", err)
 				}
 
+				// variable para almacenar el contenido del archivo
+				content_users := ""
+
 				// verificar que el primer inode este en 1
 				if inode.I_block[0] == 1 {
 
-					fileblock := &estructuras.FILEBLOCK{}
+					// for para recorrer todos los bloques que contiene el archivo
+					for _, block := range inode.I_block {
 
-					err = fileblock.Deserialize(partition_path, int64(partition_superblock.Sb_block_start+(inode.I_block[0]*partition_superblock.Sb_block_size)))
-					if err != nil {
-						return "ERROR COMANDO MKGRP: no se pudo obtener el archivo users.txt", fmt.Errorf("[error comando mkgrp] no se pudo obtener el archivo de users.txt: %v", err)
+						/*
+							si el bloque tiene un -1, significa que no esta en uso
+							por ende no tiene contenido, salimos del bucle
+						*/
+
+						if block == -1 {
+							break
+						}
+
+						fileblock := &estructuras.FILEBLOCK{}
+
+						err = fileblock.Deserialize(partition_path, int64(partition_superblock.Sb_block_start+(block*partition_superblock.Sb_block_size)))
+						if err != nil {
+							return "ERROR COMANDO MKGRP: no se pudo obtener el archivo users.txt", fmt.Errorf("[error comando mkgrp] no se pudo obtener el archivo de users.txt: %v", err)
+						}
+
+						// obtenemos el contenido de este bloque
+						content_users += strings.Trim(string(fileblock.B_content[:]), "\x00")
+
 					}
 
-					// obtenemos el contenido del archivo users.txt
-					contenido := strings.Trim(string(fileblock.B_content[:]), "\x00")
+					/*
+						fileblock := &estructuras.FILEBLOCK{}
+
+						err = fileblock.Deserialize(partition_path, int64(partition_superblock.Sb_block_start+(inode.I_block[0]*partition_superblock.Sb_block_size)))
+						if err != nil {
+							return "ERROR COMANDO MKGRP: no se pudo obtener el archivo users.txt", fmt.Errorf("[error comando mkgrp] no se pudo obtener el archivo de users.txt: %v", err)
+						}
+
+
+						// obtenemos el contenido del archivo users.txt
+						contenido := strings.Trim(string(fileblock.B_content[:]), "\x00")
+					*/
 
 					// reemplazamos \r\n con saltos \n normales
-					contenido = strings.ReplaceAll(contenido, "\r\n", "\n")
+					content_users = strings.ReplaceAll(content_users, "\r\n", "\n")
 
 					// dividir en lineas para obtener los usuarios o grupos
-					lines := strings.Split(contenido, "\n")
+					lines := strings.Split(content_users, "\n")
 
 					// vairable para almacenar el ultimo numero de grupo
 					last_Group := 0
@@ -162,20 +193,76 @@ func Create_Mkgrp(mkgrp *MKGRP) (string, error) {
 					NewGroup_line := fmt.Sprintf("%d,G,%s\n", last_Group, mkgrp.Name)
 
 					// agregamos la nueva linea
-					contenido += NewGroup_line
+					content_users += NewGroup_line
 
-					// escribimos el contenido actualizado en el bloque
-					copy(fileblock.B_content[:], contenido)
+					// obtenemos el contenido partido en chunks (64 bytes)
+					new_Content := util.Split_into_Chunks(content_users)
 
-					// Guardamos los cambios en el archivo
+					/*
+						pos := 0
+						for _, content := range new_Content {
+							pos++
+							fmt.Println("posicion " + string(rune(pos)) + " " + content)
+						}
+					*/
 
-					err = fileblock.Serialize(partition_path, int64(partition_superblock.Sb_block_start+(inode.I_block[0]*partition_superblock.Sb_block_size)))
-					if err != nil {
-						return "ERROR COMANDO MKGRP: no se pudo escribir el nuevo archivo de users.txt", fmt.Errorf("[error comando mkgrp] no se pudo escribir el nuevo archivo users.txt: %v", err)
+					//fmt.Println("-----------CREAR GRUPO--------------")
+
+					// ciclo para recorrer el arreglo de contenidos
+					for i := 0; i < len(new_Content); i++ {
+
+						/*
+							validamos de que el bloque ya estuviera contemplado
+							si no, le agregamos el numero que le corresponde y
+							actualizamos el bitmap de bloquues
+						*/
+						if inode.I_block[i] == -1 {
+							// le asignamos su numero de bloque segun le toque
+							inode.I_block[i] = partition_superblock.Sb_blocks_count
+
+							// actualizamos el bitmap de bloques
+							err = partition_superblock.Update_Block_Bitmap(partition_path)
+							if err != nil {
+								return "ERROR COMANDO MKGRP: no se pudo escribir el nuevo archivo de users.txt", fmt.Errorf("[error comando mkgrp] no se pudo escribir el nuevo archivo users.txt: %v", err)
+							}
+
+							// actualizamos el superbloque
+							partition_superblock.Sb_blocks_count++
+							partition_superblock.Sb_free_blocks_count--
+							partition_superblock.Sb_first_blo += partition_superblock.Sb_block_size
+						}
+
+						// creamos el bloque del archivo
+						fileblock := &estructuras.FILEBLOCK{
+							B_content: [64]byte{},
+						}
+
+						// copiamos el texto que le corresponde
+						copy(fileblock.B_content[:], new_Content[i])
+
+						//serializamos el bloque
+						err = fileblock.Serialize(partition_path, int64(partition_superblock.Sb_block_start+(inode.I_block[i]*partition_superblock.Sb_block_size)))
+						if err != nil {
+							return "ERROR COMANDO MKGRP: no se pudo escribir el nuevo archivo de users.txt", fmt.Errorf("[error comando mkgrp] no se pudo escribir el nuevo archivo users.txt: %v", err)
+						}
+
+						//fileblock.Print()
+
 					}
-					fmt.Println("-----------CREAR GRUPO--------------")
-					fileblock.Print()
-					fmt.Println("------------------------------------")
+
+					// serializamos el inode users.txt por si ocupo otro bloque
+					err = inode.Serialize(partition_path, int64(partition_superblock.Sb_inode_start+(apuntador*partition_superblock.Sb_inode_size)))
+					if err != nil {
+						return "ERROR COMANDO MKGRP: no se pudo escribir los cambios en la particion", fmt.Errorf("[error comando mkgrp] no se pudo escribir los cambios en la particion: %v", err)
+					}
+
+					// serializamos el superbloque por si el archivo users.txt ocupo otro bloque
+					err = partition_superblock.Serialize(partition_path, int64(mounted_partition.Partition_start))
+					if err != nil {
+						return "ERROR COMANDO MKGRP: no se pudo escribir los cambios en la particion", fmt.Errorf("[error comando mkgrp] no se pudo escribir los cambios en la particion: %v", err)
+					}
+
+					//fmt.Println("------------------------------------")
 					return "COMANDO MKGRP: grupo " + mkgrp.Name + " creado correctamente", nil
 				}
 			}

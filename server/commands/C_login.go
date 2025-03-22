@@ -120,15 +120,34 @@ func make_Login(login *LOGIN) (string, error) {
 					return "ERROR COMANDO LOGIN: no se pudo obtener el inode de users.txt", fmt.Errorf("no se pudo obtener el inode de users.txt: %v", err)
 				}
 
+				// variable para almacenar el contenido del archivo
+				content_users := ""
+
 				// verificamos que el primer i node este en 1
 				if inode.I_block[0] == 1 {
 
-					// nos movemos al bloque 1
-					fileblock := &estructuras.FILEBLOCK{}
+					// ciclo para recorrer todos los bloques que contiene el archivo
+					for _, block := range inode.I_block {
 
-					err = fileblock.Deserialize(partition_path, int64(partition_superblock.Sb_block_start+(inode.I_block[0]*partition_superblock.Sb_block_size)))
-					if err != nil {
-						return "ERROR COMANDO LOGIN: no se pudo obtener el bloque 1 de users.txt", fmt.Errorf("error la obtener el bloque 1 de users.txt: %v", err)
+						/*
+							si el bloque tiene un -1, significa que no esta en uso
+							por ende no tiene contenido, salimos del bucle
+						*/
+
+						if block == -1 {
+							break
+						}
+
+						fileblock := &estructuras.FILEBLOCK{}
+
+						err = fileblock.Deserialize(partition_path, int64(partition_superblock.Sb_block_start+(block*partition_superblock.Sb_block_size)))
+						if err != nil {
+							return "ERROR COMANDO LOGIN: no se pudo obtener el archivo users.txt", fmt.Errorf("[error comando login] no se pudo obtener el archivo de users.txt: %v", err)
+						}
+
+						// obtenemos el contenido de este bloque
+						content_users += strings.Trim(string(fileblock.B_content[:]), "\x00")
+
 					}
 
 					/*
@@ -142,20 +161,23 @@ func make_Login(login *LOGIN) (string, error) {
 						UID, TIPO, GRUPO, USUARIO, CONTRASEÑA
 					*/
 
-					// obtenemos el usuario y la password
-					contenido := strings.Trim(string(fileblock.B_content[:]), "\x00")
-
 					// reemplazamos \r\n con \n para asegurar saltos de linea correctos
-					contenido = strings.ReplaceAll(contenido, "\r\n", "\n")
+					content_users = strings.ReplaceAll(content_users, "\r\n", "\n")
 
 					// Eliminamos los saltos de linea
-					credentials := strings.Split(contenido, "\n")
+					credentials := strings.Split(content_users, "\n")
 
 					for _, user := range credentials {
 
 						values := strings.Split(user, ",")
 						if len(values) >= 5 && values[1] == "U" {
 							if values[3] == login.User && values[4] == login.Password {
+
+								group_active := Group_is_Active(credentials, values[2])
+
+								if !group_active {
+									return "ERROR COMANDO LOGIN: el grupo de este usuario no existe o esta inactivo", errors.New("[errores comando login] el grupo de este usuario no existe o esta inactivo")
+								}
 
 								if global.Is_session_Active(login.Id) {
 									msg := "YA HAY UNA SESION ACTIVA DENTRO DE ESTA PARTICION, PRIMERO DEBE HACER LOGOUT EN " + login.Id
@@ -174,4 +196,22 @@ func make_Login(login *LOGIN) (string, error) {
 		}
 	}
 	return "", nil
+}
+
+func Group_is_Active(content []string, group string) bool {
+
+	for _, line := range content {
+
+		values := strings.Split(line, ",")
+
+		if len(values) >= 3 && values[1] == "G" && values[2] == group {
+			if values[0] == "0" {
+				return false
+			} else {
+				return true
+			}
+		}
+
+	}
+	return false
 }

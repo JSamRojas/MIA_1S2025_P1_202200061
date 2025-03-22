@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	estructuras "server/Structs"
+	util "server/Utilities"
 	global "server/global"
 	"strconv"
 	"strings"
@@ -98,7 +99,7 @@ func Make_usr(mkusr *MKUSR) (string, error) {
 	}
 
 	//obtener la particion con el id donde se realiza la creacion del usuario
-	partition_superblock, _, partition_path, err := global.Get_superblock_from_part(partition_Id)
+	partition_superblock, mounted_partition, partition_path, err := global.Get_superblock_from_part(partition_Id)
 	if err != nil {
 		return "ERROR COMANDO MKUSR: no se pudo obtener la particion", fmt.Errorf("[error comando mkusr] no se pudo obtener la particion: %v", err)
 	}
@@ -132,27 +133,63 @@ func Make_usr(mkusr *MKUSR) (string, error) {
 					return "ERROR COMANDO MKUSR: no se pudo obtener el inode users.txt", fmt.Errorf("[error comando mkusr] no se pudo obtener el inode users.txt: %v", err)
 				}
 
+				// variable para almacenar el contenido del archivo
+				content_users := ""
+
 				// verificar que el primer inode este en 1
 				if inode.I_block[0] == 1 {
 
-					fileblock := &estructuras.FILEBLOCK{}
+					// for para recorrer todos los bloques que contiene el archivo
+					for _, block := range inode.I_block {
 
-					err = fileblock.Deserialize(partition_path, int64(partition_superblock.Sb_block_start+(inode.I_block[0]*partition_superblock.Sb_block_size)))
-					if err != nil {
-						return "ERROR COMANDO MKUSR: no se pudo obtener el bloque del archivo users.txt", fmt.Errorf("[error comando mkusr] no se pudo obtener el bloque de archivo users.txt: %v", err)
+						/*
+							si el bloque tiene un -1, significa que no esta en uso
+							por ende no tiene contenido, salimos del bucle
+						*/
+
+						if block == -1 {
+							break
+						}
+
+						fileblock := &estructuras.FILEBLOCK{}
+
+						err = fileblock.Deserialize(partition_path, int64(partition_superblock.Sb_block_start+(block*partition_superblock.Sb_block_size)))
+						if err != nil {
+							return "ERROR COMANDO MKUSR: no se pudo obtener el archivo users.txt", fmt.Errorf("[error comando mkusr] no se pudo obtener el archivo de users.txt: %v", err)
+						}
+
+						// obtenemos el contenido de este bloque
+						content_users += strings.Trim(string(fileblock.B_content[:]), "\x00")
+
 					}
 
-					// obtener el contenido del archivo users.txt
-					contenido := strings.Trim(string(fileblock.B_content[:]), "\x00")
+					/*
+
+							fileblock := &estructuras.FILEBLOCK{}
+
+							err = fileblock.Deserialize(partition_path, int64(partition_superblock.Sb_block_start+(inode.I_block[0]*partition_superblock.Sb_block_size)))
+							if err != nil {
+								return "ERROR COMANDO MKUSR: no se pudo obtener el bloque del archivo users.txt", fmt.Errorf("[error comando mkusr] no se pudo obtener el bloque de archivo users.txt: %v", err)
+							}
+
+
+
+						// obtener el contenido del archivo users.txt
+						contenido := strings.Trim(string(fileblock.B_content[:]), "\x00")
+
+					*/
 
 					// reemplazar \r\n con \n para asegurar saltos de linea uniformes
-					contenido = strings.ReplaceAll(contenido, "\r\n", "\n")
+					content_users = strings.ReplaceAll(content_users, "\r\n", "\n")
 
 					// dividir en lineas para obtener cada usuario o grupo
-					lines := strings.Split(contenido, "\n")
+					lines := strings.Split(content_users, "\n")
 
 					// vairable para obtener el ultimo numero de usuario
 					maxUsr := 0
+
+					// variable para saber si el grupo que ingreso, existe
+					found_group := false
 
 					// recorrer linea por linea el archivo
 					for _, line := range lines {
@@ -179,8 +216,6 @@ func Make_usr(mkusr *MKUSR) (string, error) {
 
 						}
 
-						fmt.Println(values[1])
-
 						// verificamos que el grupo si este activo
 						if len(values) <= 3 && values[1] == "G" {
 
@@ -188,8 +223,16 @@ func Make_usr(mkusr *MKUSR) (string, error) {
 								return "ERROR COMANDO MKUSR: el grupo de este usuario no existe", errors.New("[errores comando mkusr] el grupo de este usuario no existe")
 							}
 
+							if values[2] == mkusr.Group {
+								found_group = true
+							}
+
 						}
 
+					}
+
+					if !found_group {
+						return "ERROR COMANDO MKUSR: el grupo de este usuario no existe", errors.New("[errores comando mkusr] el grupo de este usuario no existe")
 					}
 
 					// incrementar el numero de usuario para el nuevo usuario
@@ -199,19 +242,67 @@ func Make_usr(mkusr *MKUSR) (string, error) {
 					newUsr_line := fmt.Sprintf("%d,U,%s,%s,%s\n", newUsr_number, mkusr.Group, mkusr.User, mkusr.Password)
 
 					// agregamos el nuevo usuario al contenido
-					contenido += newUsr_line
+					content_users += newUsr_line
 
-					// escribimos el contenido en el fileblock
-					copy(fileblock.B_content[:], contenido)
+					new_Content := util.Split_into_Chunks(content_users)
 
-					// guardamos los cambios en el archivo
-					err = fileblock.Serialize(partition_path, int64(partition_superblock.Sb_block_start+(inode.I_block[0]*partition_superblock.Sb_block_size)))
-					if err != nil {
-						return "ERROR COMANDO MKUSR: no se pudo escribir el contenido en el archivo users.txt", fmt.Errorf("[error comando mkusr] no se pudo escribir el contenido en el archivo users.txt: %v", err)
+					//fmt.Println("-------------CREAR USUARIO--------------")
+
+					// ciclo para recorrer el arreglo de contenidos
+					for i := 0; i < len(new_Content); i++ {
+
+						/*
+							validamos de que el bloque ya estuviera contemplado
+							si no, le agregamos el numero que le corresponde y
+							actualizamos el bitmap de bloquues
+						*/
+						if inode.I_block[i] == -1 {
+							// le asignamos su numero de bloque segun le toque
+							inode.I_block[i] = partition_superblock.Sb_blocks_count
+
+							// actualizamos el bitmap de bloques
+							err = partition_superblock.Update_Block_Bitmap(partition_path)
+							if err != nil {
+								return "ERROR COMANDO MKUSR: no se pudo escribir el nuevo archivo de users.txt", fmt.Errorf("[error comando mkusr] no se pudo escribir el nuevo archivo users.txt: %v", err)
+							}
+
+							// actualizamos el superbloque
+							partition_superblock.Sb_blocks_count++
+							partition_superblock.Sb_free_blocks_count--
+							partition_superblock.Sb_first_blo += partition_superblock.Sb_block_size
+						}
+
+						// creamos el bloque del archivo
+						fileblock := &estructuras.FILEBLOCK{
+							B_content: [64]byte{},
+						}
+
+						// copiamos el texto que le corresponde
+						copy(fileblock.B_content[:], new_Content[i])
+
+						//serializamos el bloque
+						err = fileblock.Serialize(partition_path, int64(partition_superblock.Sb_block_start+(inode.I_block[i]*partition_superblock.Sb_block_size)))
+						if err != nil {
+							return "ERROR COMANDO MKUSR: no se pudo escribir el nuevo archivo de users.txt", fmt.Errorf("[error comando mkusr] no se pudo escribir el nuevo archivo users.txt: %v", err)
+						}
+
+						//fileblock.Print()
+
 					}
-					fmt.Println("-------------CREAR USUARIO--------------")
-					fileblock.Print()
-					fmt.Println("----------------------------------------")
+
+					// serializamos el inode users.txt por si ocupo otro bloque
+					err = inode.Serialize(partition_path, int64(partition_superblock.Sb_inode_start+(apuntador*partition_superblock.Sb_inode_size)))
+					if err != nil {
+						return "ERROR COMANDO MKUSR: no se pudo escribir los cambios en la particion", fmt.Errorf("[error comando mkusr] no se pudo escribir los cambios en la particion: %v", err)
+					}
+
+					// serializamos el superbloque por si el archivo users.txt ocupo otro bloque
+					err = partition_superblock.Serialize(partition_path, int64(mounted_partition.Partition_start))
+					if err != nil {
+						return "ERROR COMANDO MKGRP: no se pudo escribir los cambios en la particion", fmt.Errorf("[error comando mkgrp] no se pudo escribir los cambios en la particion: %v", err)
+					}
+
+					//fmt.Println("----------------------------------------")
 					return "COMANDO MKUSR: usuario " + mkusr.User + " creado con exito", nil
 				}
 			}

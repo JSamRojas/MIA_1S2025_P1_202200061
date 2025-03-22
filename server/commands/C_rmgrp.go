@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	estructuras "server/Structs"
+	util "server/Utilities"
 	global "server/global"
 	"strings"
 )
@@ -117,25 +118,55 @@ func Remove_group(rmgrp *RMGRP) (string, error) {
 					return "ERROR COMANDO RMGRP: no se pudo obtener el inode de users.txt", fmt.Errorf("[error comando rmgrp] no se pudo obtener el inode users.txt: %v", err)
 				}
 
+				// variable para almacenar el contenido del archivo
+				content_users := ""
+
 				// verificar que el primer inode sea 1
 				if inode.I_block[0] == 1 {
 
-					// moverme al bloque 1
-					fileblock := &estructuras.FILEBLOCK{}
+					// ciclo para recorrer todos los bloques que contiene el archivo
+					for _, block := range inode.I_block {
 
-					err = fileblock.Deserialize(partition_path, int64(partition_superblock.Sb_block_start+(inode.I_block[0]*partition_superblock.Sb_block_size)))
-					if err != nil {
-						return "ERROR COMANDO RMGRP: no se pudo obtener el fileblock de users.txt", fmt.Errorf("[error comando rmgrp] no se pudo obtener el fileblock de users.txt: %v", err)
+						/*
+							si el bloque tiene un -1, significa que no esta en uso
+							por ende no tiene contenido, salimos del bucle
+						*/
+
+						if block == -1 {
+							break
+						}
+
+						fileblock := &estructuras.FILEBLOCK{}
+
+						err = fileblock.Deserialize(partition_path, int64(partition_superblock.Sb_block_start+(block*partition_superblock.Sb_block_size)))
+						if err != nil {
+							return "ERROR COMANDO MKGRP: no se pudo obtener el archivo users.txt", fmt.Errorf("[error comando mkgrp] no se pudo obtener el archivo de users.txt: %v", err)
+						}
+
+						// obtenemos el contenido de este bloque
+						content_users += strings.Trim(string(fileblock.B_content[:]), "\x00")
+
 					}
 
-					// obtener el contenido del archivo users.txt
-					contenido := strings.Trim(string(fileblock.B_content[:]), "\x00")
+					/*
+						// moverme al bloque 1
+						fileblock := &estructuras.FILEBLOCK{}
+
+						err = fileblock.Deserialize(partition_path, int64(partition_superblock.Sb_block_start+(inode.I_block[0]*partition_superblock.Sb_block_size)))
+						if err != nil {
+							return "ERROR COMANDO RMGRP: no se pudo obtener el fileblock de users.txt", fmt.Errorf("[error comando rmgrp] no se pudo obtener el fileblock de users.txt: %v", err)
+						}
+
+						// obtener el contenido del archivo users.txt
+						contenido := strings.Trim(string(fileblock.B_content[:]), "\x00")
+
+					*/
 
 					// reemplazar los \r\n con \n para asegurar saltos de linea
-					contenido = strings.ReplaceAll(contenido, "\r\n", "\n")
+					content_users = strings.ReplaceAll(content_users, "\r\n", "\n")
 
 					// Dividir las lineas para obtener cada usuario o grupo
-					lines := strings.Split(contenido, "\n")
+					lines := strings.Split(content_users, "\n")
 
 					// booleana para saber si encontro el grupo
 					found_group := false
@@ -161,6 +192,13 @@ func Remove_group(rmgrp *RMGRP) (string, error) {
 							continue
 						}
 
+						if len(values) >= 3 && values[1] == "U" && values[2] == rmgrp.Name {
+							values[0] = "0"
+							rm_group := strings.Join(values, ",")
+							newUsers = append(newUsers, rm_group)
+							continue
+						}
+
 						// agregamos la linea al nuevo contenido si no es el grupo a eliminar
 						newUsers = append(newUsers, line)
 					}
@@ -173,23 +211,30 @@ func Remove_group(rmgrp *RMGRP) (string, error) {
 					// unir las lineas nuevas en el contenido
 					new_File := strings.Join(newUsers, "\n") + "\n"
 
-					// limpiamos el bloque antes de escribir el nuevo archivo
-					for i := range fileblock.B_content {
-						fileblock.B_content[i] = '\x00'
+					new_Content := util.Split_into_Chunks(new_File)
+
+					// ciclo para recrorrer el arreglo de contenidos
+					for i := 0; i < len(new_Content); i++ {
+
+						// creamos un bloque de archivos
+						fileblock := &estructuras.FILEBLOCK{
+							B_content: [64]byte{},
+						}
+
+						// copiamos el texto que le corresponde
+						copy(fileblock.B_content[:], new_Content[i])
+
+						// serializamos el bloque
+						err = fileblock.Serialize(partition_path, int64(partition_superblock.Sb_block_start+(inode.I_block[i]*partition_superblock.Sb_block_size)))
+						if err != nil {
+							return "ERROR COMANDO RMGRP: no se pudo escribir el nuevo archivo de users.txt", fmt.Errorf("[error comando mkgrp] no se pudo escribir el nuevo archivo users.txt: %v", err)
+						}
+
 					}
 
-					// escribimos el nuevo contenido
-					copy(fileblock.B_content[:], new_File)
-
-					// guardamos los cambios en el archivo
-					err = fileblock.Serialize(partition_path, int64(partition_superblock.Sb_block_start+(inode.I_block[0]*partition_superblock.Sb_block_size)))
-					if err != nil {
-						return "ERROR COMANDO RMGRP: no se pudo escribi el nuevo archivo users.txt", fmt.Errorf("[error comando rmgrp] no se pudo escribir el nuevo archivo users.txt: %v", err)
-					}
-
-					fmt.Println("--------------BORRAR GRUPO-------------")
-					fileblock.Print()
-					fmt.Println("---------------------------------------")
+					//fmt.Println("--------------BORRAR GRUPO-------------")
+					//fileblock.Print()
+					//fmt.Println("---------------------------------------")
 
 					return "COMANDO RMGRP: grupo " + rmgrp.Name + " eliminado correctamente", nil
 				}

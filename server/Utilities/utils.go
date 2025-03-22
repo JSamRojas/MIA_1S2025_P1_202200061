@@ -99,3 +99,16 @@ func Get_File_Names(path string) (string, string) {
 	outputImage := path
 	return dotFileName, outputImage
 }
+
+// Funcion para dividir el contenido de un archivo en chuncks (de 64 bytes)
+func Split_into_Chunks(content string) []string {
+	var chunks []string
+	for i := 0; i < len(content); i += 64 {
+		end := i + 64
+		if end > len(content) {
+			end = len(content)
+		}
+		chunks = append(chunks, content[i:end])
+	}
+	return chunks
+}
