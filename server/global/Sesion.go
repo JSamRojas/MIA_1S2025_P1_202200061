@@ -1,6 +1,9 @@
 package global
 
-import "sync"
+import (
+	"strings"
+	"sync"
+)
 
 var sessions_Map = make(map[string]map[string]bool)
 var mutex sync.Mutex
@@ -90,4 +93,24 @@ func Get_user_Active(partition_Id string) string {
 	}
 
 	return ""
+}
+
+// Funcion para saber si el usuario esta activo o no
+func User_is_Active(content []string, user string) bool {
+
+	for _, line := range content {
+
+		values := strings.Split(line, ",")
+
+		if len(values) >= 3 && values[1] == "U" && values[3] == user {
+			if values[0] == "0" {
+				return false
+			} else {
+				return true
+			}
+		}
+
+	}
+	return false
+
 }

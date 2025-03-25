@@ -185,17 +185,15 @@ func Remove_group(rmgrp *RMGRP) (string, error) {
 
 						// verificar si es un grupo y si el nombre del grupo coincide
 						if len(values) >= 3 && values[1] == "G" && values[2] == rmgrp.Name {
+
+							if values[0] == "0" {
+								return "[error comand rmgrp] no se puede eliminar un grupo que no existe", nil
+							}
+
 							values[0] = "0"
 							rm_group := strings.Join(values, ",")
 							newUsers = append(newUsers, rm_group)
 							found_group = true
-							continue
-						}
-
-						if len(values) >= 3 && values[1] == "U" && values[2] == rmgrp.Name {
-							values[0] = "0"
-							rm_group := strings.Join(values, ",")
-							newUsers = append(newUsers, rm_group)
 							continue
 						}
 

@@ -87,6 +87,26 @@ func (sb *SUPERBLOCK) Deserialize(path string, offset int64) error {
 
 }
 
+// Funcion para crear una carpeta o carpetas, dentro del sistema de archivos
+func (sb *SUPERBLOCK) Create_Folder(path string, parents_Directories []string, destine_Directory string, create_Parents bool) error {
+
+	// si el arreglo de directorios padre esta vacio, solo se trabaja desde el inode root
+	if len(parents_Directories) == 0 {
+		return sb.Create_Inode_as_Folder(path, 0, parents_Directories, destine_Directory, create_Parents)
+	}
+
+	// iteramos sobre cada inode ya que se necesita buscar el inode padre
+	for i := int32(0); i < int32(sb.Sb_inodes_count); i++ {
+		err := sb.Create_Inode_as_Folder(path, i, parents_Directories, destine_Directory, create_Parents)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+
+}
+
 // Funcion para imprimir los valores del superblock
 func (sb *SUPERBLOCK) Print() {
 
@@ -110,4 +130,22 @@ func (sb *SUPERBLOCK) Print() {
 	fmt.Printf("Bitmap Block Start: %d\n", sb.Sb_bm_block_start)
 	fmt.Printf("Inode Start: %d\n", sb.Sb_inode_start)
 	fmt.Printf("Block Start: %d\n", sb.Sb_block_start)
+}
+
+// Funcion para imprimir los inodes del superblock
+func (sb *SUPERBLOCK) Print_Inodes(path string) error {
+
+	fmt.Println("\nInodos\n----------------")
+
+	for i := int32(0); i < sb.Sb_inodes_count; i++ {
+		inode := &INODE{}
+		err := inode.Deserialize(path, int64(sb.Sb_inode_start+(i*sb.Sb_inode_size)))
+		if err != nil {
+			return err
+		}
+		fmt.Printf("\nInodo %d:\n", i)
+		inode.Print()
+	}
+	return nil
+
 }

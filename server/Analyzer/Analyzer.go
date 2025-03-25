@@ -73,6 +73,15 @@ func Analyzer(inputs []string) ([]string, []string) {
 	case "mkusr":
 		_, msg, err = commands.Mkusr_Command(tokens[1:])
 
+	case "rmusr":
+		_, msg, err = commands.Rmusr_Command(tokens[1:])
+
+	case "chgrp":
+		_, msg, err = commands.Chgrp_Command(tokens[1:])
+
+	case "mkdir":
+		_, msg, err = commands.Mkdir_Command(tokens[1:])
+
 	case "rep":
 		_, msg, err = commands.Rep_Command(tokens[1:])
 

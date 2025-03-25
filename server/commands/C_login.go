@@ -175,8 +175,14 @@ func make_Login(login *LOGIN) (string, error) {
 
 								group_active := Group_is_Active(credentials, values[2])
 
+								user_active := global.User_is_Active(credentials, login.User)
+
 								if !group_active {
 									return "ERROR COMANDO LOGIN: el grupo de este usuario no existe o esta inactivo", errors.New("[errores comando login] el grupo de este usuario no existe o esta inactivo")
+								}
+
+								if !user_active {
+									return "ERROR COMANDO LOGIN: el usuario no existe o esta inactivo", errors.New("[errores comando login] el usuario no existe o esta inactivo")
 								}
 
 								if global.Is_session_Active(login.Id) {

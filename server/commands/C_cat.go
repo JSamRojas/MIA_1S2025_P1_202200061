@@ -65,7 +65,7 @@ func Cat_Command(tokens []string) (*CAT, string, error) {
 
 	}
 
-	return cat, "COMANDO CAT: lectura realizada con exito\n CONTENIDO: \n" + Content.String(), nil
+	return cat, "[comando cat] lectura realizada con exito\nCONTENIDO: \n" + Content.String(), nil
 
 }
 
@@ -79,9 +79,9 @@ func execute_Cat(cat *CAT) (string, error) {
 	// la ruta del archivo esta dentro del parametro file_Path de cat
 	parent_Dirs, dest_Dirs := util.Get_Parent_Dirs(cat.file_Path)
 	// Arreglo de carpetas o directorios padres
-	fmt.Println("\nDirectorios padres del archivo: ", parent_Dirs)
+	//fmt.Println("\nDirectorios padres del archivo: ", parent_Dirs)
 	// Nombre del archivo destino
-	fmt.Println("Directorio destino: ", dest_Dirs)
+	//fmt.Println("Directorio destino: ", dest_Dirs)
 
 	// Obtener el Id de la particion donde esta logueado
 	id_Part := global.Get_id_Session()

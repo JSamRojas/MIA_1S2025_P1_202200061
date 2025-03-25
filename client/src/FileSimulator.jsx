@@ -104,7 +104,7 @@ export function FileSimulator() {
 
       <div className=" bg-gray-800 h-full w-full p-6 rounded-md ">
         <textarea
-          className=" bg-slate-300 w-full p-2 border rounded h-full"
+          className=" bg-slate-300 w-full p-2 border rounded h-full font-mono"
           value={fileContent}
           onChange={(e) => setFileContent(e.target.value)}
           placeholder="Contenido del archivo..."
@@ -113,7 +113,7 @@ export function FileSimulator() {
 
       <div className=" bg-gray-800 h-full w-full p-6 rounded-md">
         <textarea
-          className=" bg-slate-300 w-full p-2 border rounded h-full outline-none border-none"
+          className=" bg-slate-300 w-full p-2 border rounded h-full outline-none border-none font-mono"
           value={output}
           onChange={(e) => setOutput(output)}
           readOnly

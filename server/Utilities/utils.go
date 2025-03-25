@@ -112,3 +112,11 @@ func Split_into_Chunks(content string) []string {
 	}
 	return chunks
 }
+
+// Funcion para eliminar el elemento n de un arreglo y devolverlo
+func Remove_At[T any](slice []T, index int) []T {
+	if index < 0 || index >= len(slice) {
+		return slice
+	}
+	return append(slice[:index], slice[index+1:]...) // Concatena ambos segmentos sin el elemento
+}
