@@ -79,6 +79,9 @@ func Analyzer(inputs []string) ([]string, []string) {
 	case "chgrp":
 		_, msg, err = commands.Chgrp_Command(tokens[1:])
 
+	case "mkfile":
+		_, msg, err = commands.Mkfile_Command(tokens[1:])
+
 	case "mkdir":
 		_, msg, err = commands.Mkdir_Command(tokens[1:])
 

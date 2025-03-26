@@ -3,8 +3,10 @@ package Structs
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -88,19 +90,83 @@ func (sb *SUPERBLOCK) Deserialize(path string, offset int64) error {
 }
 
 // Funcion para crear una carpeta o carpetas, dentro del sistema de archivos
-func (sb *SUPERBLOCK) Create_Folder(path string, parents_Directories []string, destine_Directory string, create_Parents bool) error {
+func (sb *SUPERBLOCK) Create_Folder(path string, parents_Directories []string, destine_Directory string, create_Parents bool, usrActive int32, grpActive int32) error {
 
 	// si el arreglo de directorios padre esta vacio, solo se trabaja desde el inode root
-	if len(parents_Directories) == 0 {
-		return sb.Create_Inode_as_Folder(path, 0, parents_Directories, destine_Directory, create_Parents)
-	}
 
-	// iteramos sobre cada inode ya que se necesita buscar el inode padre
-	for i := int32(0); i < int32(sb.Sb_inodes_count); i++ {
-		err := sb.Create_Inode_as_Folder(path, i, parents_Directories, destine_Directory, create_Parents)
+	if len(parents_Directories) == 0 {
+
+		// enviamos a buscar el directorio a crear, para saber si existe
+		next_inode, err := sb.Found_directory(path, 0, destine_Directory)
+		// si hay un error, lo devolvemos
 		if err != nil {
 			return err
 		}
+		// si el valor de la variable es un -1, significa que el directorio no existe, por ende, hay que crearlo
+		if next_inode == int32(-1) {
+			err := sb.Create_Inode_as_Folder(path, 0, destine_Directory, usrActive, grpActive)
+
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+
+	}
+
+	/*
+		Si el arreglo de directorios padre no esta vacio, iteramos uno por uno,
+		si el directorio existe, entonces lo obtenemos y pasamos al siguiente y si no existe, lo creamos y luego pasamos al siguiente
+	*/
+
+	Inode_destino := int32(0)
+
+	for i := 0; i < len(parents_Directories); i++ {
+
+		// enviamos a buscar el directorio en la posicion i, para saber si existe
+		next_inode, err := sb.Found_directory(path, Inode_destino, parents_Directories[i])
+		// si hay un error, lo devolvemos
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("VALOR NEXT_INODE: ", next_inode)
+
+		// si el valor de la variable es un -1, significa que el directorio no existe, por ende, hay que crearlo
+		if next_inode == int32(-1) {
+			if create_Parents {
+				err := sb.Create_Inode_as_Folder(path, Inode_destino, parents_Directories[i], usrActive, grpActive)
+
+				if err != nil {
+					return err
+				}
+
+				/*
+					ya que creamos una carpeta (inode) y es el inmediato siguiente al que teniamos, simplemente sumamos 1 a Inode_destino y mantenemos la continuidad
+				*/
+				Inode_destino = sb.Sb_inodes_count - 1
+
+			} else {
+				return errors.New("[error comando mkdir] uno de los directorios de la ruta no existe")
+			}
+		} else {
+			/*
+				si no devuelve un -1, significa que encontro el inode de la siguiente carpeta, por ende se lo asignamos a Inode_destino y mantenemos la continuidad
+			*/
+			Inode_destino = next_inode
+		}
+
+	}
+
+	fmt.Println("VALOR NEXT_INODE: ", Inode_destino)
+
+	/*
+		una vez creados los directorios padres, podemos crear el directorio destino
+	*/
+	err := sb.Create_Inode_as_Folder(path, Inode_destino, destine_Directory, usrActive, grpActive)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -148,4 +214,114 @@ func (sb *SUPERBLOCK) Print_Inodes(path string) error {
 	}
 	return nil
 
+}
+
+// Funcion para imprimir los bloques del superblock
+func (sb *SUPERBLOCK) Print_blocks(path string) error {
+
+	// Imprimir bloques
+	fmt.Println("\nBloques\n----------------")
+	// Iterar sobre cada inodo
+	for i := int32(0); i < sb.Sb_inodes_count; i++ {
+		inode := &INODE{}
+		// Deserializar el inodo
+		err := inode.Deserialize(path, int64(sb.Sb_inode_start+(i*sb.Sb_inode_size)))
+		if err != nil {
+			return err
+		}
+		// Iterar sobre cada bloque del inodo (apuntadores)
+		for _, blockIndex := range inode.I_block {
+			// Si el bloque no existe, salir
+			if blockIndex == -1 {
+				break
+			}
+			// Si el inodo es de tipo carpeta
+			if inode.I_type[0] == '0' {
+				block := &FOLDERBLOCK{}
+				// Deserializar el bloque
+				err := block.Deserialize(path, int64(sb.Sb_block_start+(blockIndex*sb.Sb_block_size))) // 64 porque es el tamaño de un bloque
+				if err != nil {
+					return err
+				}
+				// Imprimir el bloque
+				fmt.Printf("\nBloque %d:\n", blockIndex)
+				block.Print()
+				continue
+
+				// Si el inodo es de tipo archivo
+			} else if inode.I_type[0] == '1' {
+				block := &FILEBLOCK{}
+				// Deserializar el bloque
+				err := block.Deserialize(path, int64(sb.Sb_block_start+(blockIndex*sb.Sb_block_size))) // 64 porque es el tamaño de un bloque
+				if err != nil {
+					return err
+				}
+				// Imprimir el bloque
+				fmt.Printf("\nBloque %d:\n", blockIndex)
+				block.Print()
+				continue
+			}
+
+		}
+	}
+
+	return nil
+}
+
+// Funcion para recorrer los bloques de un inode en busca de una carpeta, si la encuentra se devuelve el numero, si no, devuelve un -1
+func (sb *SUPERBLOCK) Found_directory(path string, inode_Index int32, directory string) (int32, error) {
+
+	// creamos una instancia de inode
+	inode := INODE{}
+
+	err := inode.Deserialize(path, int64(sb.Sb_inode_start+(inode_Index*sb.Sb_inode_size)))
+	if err != nil {
+		return int32(-1), err
+	}
+
+	if inode.I_type[0] == '1' {
+		return int32(-1), errors.New("[error comando mkdir] uno de los directorios de la ruta era un archivo y no una carpeta")
+	}
+
+	// iteramos sobre cada bloque del inodo
+	for i := 0; i < len(inode.I_block); i++ {
+
+		// si el bloque no existe, nos salimos
+		if inode.I_block[i] == -1 {
+			break
+		}
+
+		// creamos una instancia de folderblock
+		folder := &FOLDERBLOCK{}
+
+		// deserializamos el bloque
+		err := folder.Deserialize(path, int64(sb.Sb_block_start+(inode.I_block[i]*sb.Sb_block_size)))
+		if err != nil {
+			return int32(-1), err
+		}
+
+		for index_content := 2; index_content < len(folder.B_content); index_content++ {
+
+			// obtener el contenido del bloque
+			content := folder.B_content[index_content]
+
+			// si el contenido esta vacio, retornamos un -1 para indicar que no fue encontrado el directorio
+			if content.B_inodo == -1 {
+				break
+			}
+
+			// convertimos el nombre del bloque y eliminamos caracteres nulos
+			block_Name := strings.Trim(string(content.B_name[:]), "\x00")
+			// convertimos el nombre del directorio y eliminamos caracteres nulos
+			dir_Name := strings.Trim(directory, "\x00")
+
+			// si el nombre del contenido coincide con el nombre de la carpeta, entonces devolvemos el numero de inodo al que apunta
+			if strings.EqualFold(block_Name, dir_Name) {
+				return int32(content.B_inodo), nil
+			}
+
+		}
+
+	}
+	return int32(-1), nil
 }

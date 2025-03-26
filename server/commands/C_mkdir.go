@@ -17,7 +17,9 @@ type MKDIR struct {
 
 func Mkdir_Command(tokens []string) (*MKDIR, string, error) {
 
-	mkdir := &MKDIR{}
+	mkdir := &MKDIR{
+		Parents: false,
+	}
 
 	// separar todos los tokens en una sola cadena y se dividen por espacios
 	atributos := strings.Join(tokens, " ")
@@ -29,6 +31,11 @@ func Mkdir_Command(tokens []string) (*MKDIR, string, error) {
 	found := lexic.FindAllString(atributos, -1)
 
 	for _, fun := range found {
+
+		if strings.EqualFold(fun, "-p") { // Verificar si es el parámetro -p
+			mkdir.Parents = true
+			continue
+		}
 
 		parametro := strings.SplitN(fun, "=", 2)
 		if len(parametro) != 2 {
@@ -49,9 +56,6 @@ func Mkdir_Command(tokens []string) (*MKDIR, string, error) {
 				return nil, "", errors.New("[error comando mkdir] el path no puede estar vacio")
 			}
 			mkdir.Path = value
-
-		case "-p":
-			mkdir.Parents = true
 
 		default:
 			return nil, "", fmt.Errorf("[error comando mkdir] parametro desconocido: %s", key)
@@ -88,7 +92,7 @@ func Execute_mkdir(mkdir *MKDIR) (string, error) {
 	msg := ""
 	msg, err = Create_directory(mkdir.Path, partition_superblock, partition_path, partition_mounted, mkdir.Parents)
 	if err != nil {
-		return msg, fmt.Errorf("[error comando mkdir] no se pudo crear el directorio: %v", err)
+		return msg, err
 	}
 
 	return "", nil
@@ -101,13 +105,19 @@ func Create_directory(DirectPath string, partition_superblock *estructuras.SUPER
 	fmt.Println("\nDirectorios padre: ", parent_Directories)
 	fmt.Println("Directorio destino: ", dest_Directory)
 
-	// crear el directorio segun el path definido
-	err := partition_superblock.Create_Folder(partition_path, parent_Directories, dest_Directory, create_Parents)
+	usrActive, grpActive, err := global.Get_userid_groupid()
 	if err != nil {
-		return "", fmt.Errorf("[error comando mkdir] no se pudieron crear las carpetas: %v", err)
+		return "", err
 	}
 
-	partition_superblock.Print_Inodes(partition_path)
+	// crear el directorio segun el path definido
+	err = partition_superblock.Create_Folder(partition_path, parent_Directories, dest_Directory, create_Parents, usrActive, grpActive)
+	if err != nil {
+		return "", err
+	}
+
+	//partition_superblock.Print_Inodes(partition_path)
+	partition_superblock.Print_blocks(partition_path)
 
 	err = partition_superblock.Serialize(partition_path, int64(partition_mounted.Partition_start))
 	if err != nil {
