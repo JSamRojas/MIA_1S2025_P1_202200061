@@ -105,19 +105,25 @@ func Create_directory(DirectPath string, partition_superblock *estructuras.SUPER
 	fmt.Println("\nDirectorios padre: ", parent_Directories)
 	fmt.Println("Directorio destino: ", dest_Directory)
 
+	if strings.HasSuffix(dest_Directory, ".txt") {
+		return "", errors.New("[error comando mkdir] el nombre de la carpeta destino, es de un archivo")
+	}
+
 	usrActive, grpActive, err := global.Get_userid_groupid()
 	if err != nil {
 		return "", err
 	}
 
+	var content []string
+
 	// crear el directorio segun el path definido
-	err = partition_superblock.Create_Folder(partition_path, parent_Directories, dest_Directory, create_Parents, usrActive, grpActive)
+	err = partition_superblock.Create_Folder(partition_path, parent_Directories, dest_Directory, create_Parents, content, 0, usrActive, grpActive)
 	if err != nil {
 		return "", err
 	}
 
 	//partition_superblock.Print_Inodes(partition_path)
-	partition_superblock.Print_blocks(partition_path)
+	//partition_superblock.Print_blocks(partition_path)
 
 	err = partition_superblock.Serialize(partition_path, int64(partition_mounted.Partition_start))
 	if err != nil {

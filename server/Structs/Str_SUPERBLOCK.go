@@ -90,7 +90,7 @@ func (sb *SUPERBLOCK) Deserialize(path string, offset int64) error {
 }
 
 // Funcion para crear una carpeta o carpetas, dentro del sistema de archivos
-func (sb *SUPERBLOCK) Create_Folder(path string, parents_Directories []string, destine_Directory string, create_Parents bool, usrActive int32, grpActive int32) error {
+func (sb *SUPERBLOCK) Create_Folder(path string, parents_Directories []string, destine_Directory string, create_Parents bool, content []string, sizeFile int, usrActive int32, grpActive int32) error {
 
 	// si el arreglo de directorios padre esta vacio, solo se trabaja desde el inode root
 
@@ -104,11 +104,24 @@ func (sb *SUPERBLOCK) Create_Folder(path string, parents_Directories []string, d
 		}
 		// si el valor de la variable es un -1, significa que el directorio no existe, por ende, hay que crearlo
 		if next_inode == int32(-1) {
-			err := sb.Create_Inode_as_Folder(path, 0, destine_Directory, usrActive, grpActive)
 
-			if err != nil {
-				return err
+			// si el nombre del directorio termina con .txt entonces es un archivo
+			if strings.HasSuffix(destine_Directory, ".txt") {
+				err := sb.Create_Inode_as_File(path, 0, destine_Directory, sizeFile, content, usrActive, grpActive)
+
+				if err != nil {
+					return err
+				}
+
+			} else {
+				err := sb.Create_Inode_as_Folder(path, 0, destine_Directory, usrActive, grpActive)
+
+				if err != nil {
+					return err
+				}
+
 			}
+
 		}
 
 		return nil
@@ -131,7 +144,7 @@ func (sb *SUPERBLOCK) Create_Folder(path string, parents_Directories []string, d
 			return err
 		}
 
-		fmt.Println("VALOR NEXT_INODE: ", next_inode)
+		//fmt.Println("VALOR NEXT_INODE: ", next_inode)
 
 		// si el valor de la variable es un -1, significa que el directorio no existe, por ende, hay que crearlo
 		if next_inode == int32(-1) {
@@ -148,7 +161,7 @@ func (sb *SUPERBLOCK) Create_Folder(path string, parents_Directories []string, d
 				Inode_destino = sb.Sb_inodes_count - 1
 
 			} else {
-				return errors.New("[error comando mkdir] uno de los directorios de la ruta no existe")
+				return errors.New("[error comando mkdir/mkfile] uno de los directorios de la ruta no existe")
 			}
 		} else {
 			/*
@@ -159,14 +172,29 @@ func (sb *SUPERBLOCK) Create_Folder(path string, parents_Directories []string, d
 
 	}
 
-	fmt.Println("VALOR NEXT_INODE: ", Inode_destino)
+	//fmt.Println("VALOR NEXT_INODE: ", Inode_destino)
 
 	/*
 		una vez creados los directorios padres, podemos crear el directorio destino
 	*/
-	err := sb.Create_Inode_as_Folder(path, Inode_destino, destine_Directory, usrActive, grpActive)
-	if err != nil {
-		return err
+
+	// si el nombre del directorio termina con .txt entonces es un archivo
+	if strings.HasSuffix(destine_Directory, ".txt") {
+
+		err := sb.Create_Inode_as_File(path, Inode_destino, destine_Directory, sizeFile, content, usrActive, grpActive)
+
+		if err != nil {
+			return err
+		}
+
+	} else {
+
+		err := sb.Create_Inode_as_Folder(path, Inode_destino, destine_Directory, usrActive, grpActive)
+
+		if err != nil {
+			return err
+		}
+
 	}
 
 	return nil
@@ -280,7 +308,7 @@ func (sb *SUPERBLOCK) Found_directory(path string, inode_Index int32, directory 
 	}
 
 	if inode.I_type[0] == '1' {
-		return int32(-1), errors.New("[error comando mkdir] uno de los directorios de la ruta era un archivo y no una carpeta")
+		return int32(-1), errors.New("[error] uno de los directorios de la ruta era un archivo y no una carpeta")
 	}
 
 	// iteramos sobre cada bloque del inodo
