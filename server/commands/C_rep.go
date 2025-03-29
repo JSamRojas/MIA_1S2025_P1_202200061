@@ -43,7 +43,7 @@ func Rep_Command(tokens []string) (*REP, string, error) {
 
 		case "-name":
 
-			validNames := []string{"mbr", "disk", "inode", "block", "bm_inode", "bm_block", "sb", "file", "ls"}
+			validNames := []string{"mbr", "disk", "inode", "block", "bm_inode", "bm_bloc", "sb", "file", "ls"}
 
 			if !contains(validNames, value) {
 				return nil, "ERROR: nombre de reporte invalido: " + value, errors.New("nombre de reporte invalido: " + value)
@@ -124,6 +124,29 @@ func Get_type_report(reporte *REP) (string, error) {
 			fmt.Printf("ERROR: %s\n", err)
 		}
 
+	case "block":
+		err = reportes.ReporteBLOCK(sbREP, diskpathREP, reporte.Path)
+		if err != nil {
+			fmt.Printf("ERROR: %s\n", err)
+		}
+
+	case "bm_inode":
+		err = reportes.ReporteBMINODE(sbREP, diskpathREP, reporte.Path)
+		if err != nil {
+			fmt.Printf("ERROR: %s\n", err)
+		}
+
+	case "bm_bloc":
+		err = reportes.ReporteBMBLOC(sbREP, diskpathREP, reporte.Path)
+		if err != nil {
+			fmt.Printf("ERROR: %s\n", err)
+		}
+
+	case "sb":
+		err = reportes.ReporteSB(sbREP, diskpathREP, reporte.Path)
+		if err != nil {
+			fmt.Printf("ERROR: %s\n", err)
+		}
 	}
 
 	return "", nil

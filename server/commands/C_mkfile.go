@@ -29,7 +29,7 @@ func Mkfile_Command(tokens []string) (*MKFILE, string, error) {
 	// unimos todos los tokens en una sola cadena y luego se divide por espacios
 	atributos := strings.Join(tokens, " ")
 	// expresion regular para encontrar los parametros del comando
-	lexic := regexp.MustCompile(`(?i)-path="[^"]+"|(?i)-path=[^\s]+|(?i)-r|-size=\d+|(?i)-cont="[^"]+"|(?i)-cont=[^\s]+`)
+	lexic := regexp.MustCompile(`(?i)-path="[^"]+"|(?i)-path=[^\s]+|(?i)-r|-size=-?\d+|(?i)-cont="[^"]+"|(?i)-cont=[^\s]+`)
 	// encuentra todas las coincidencias de la expresion regular en la cadena de argumentos
 	found := lexic.FindAllString(atributos, -1)
 
@@ -64,7 +64,7 @@ func Mkfile_Command(tokens []string) (*MKFILE, string, error) {
 		case "-size":
 
 			size, err := strconv.Atoi(value)
-			if err != nil || size <= 0 {
+			if err != nil || size < 0 {
 				return nil, "", errors.New("[error comando mkfile] el parametro de size no puede ser 0 o menor")
 			}
 			mkfile.Size = size
@@ -89,7 +89,7 @@ func Mkfile_Command(tokens []string) (*MKFILE, string, error) {
 	}
 
 	if mkfile.Cont == "" && mkfile.Size == 0 {
-		return nil, "", errors.New("[error comando mkfile] los parametros cont y size, no pueden estar vacios al mismo tiempo")
+		mkfile.Size = 0
 	}
 
 	// creamos el archivo con los parametros indicados
@@ -134,7 +134,7 @@ func Make_file(mkfile *MKFILE) (string, error) {
 
 	}
 
-	fmt.Println("\nContenido del archivo: ", mkfile.Cont)
+	//fmt.Println("\nContenido del archivo: ", mkfile.Cont)
 
 	// creamos el archivo correspondiente
 	msg := ""
@@ -149,15 +149,15 @@ func Make_file(mkfile *MKFILE) (string, error) {
 
 func Create_File(mkfile *MKFILE, partition_superblock *estructuras.SUPERBLOCK, partition_path string, mounted_partition *estructuras.PARTITION) (string, error) {
 
-	fmt.Println("\nCreando archivo: ", mkfile.Path)
+	//fmt.Println("\nCreando archivo: ", mkfile.Path)
 
 	parentDirs, destDir := util.Get_Parent_Dirs(mkfile.Path)
-	fmt.Println("\nDirectorios padres:", parentDirs)
-	fmt.Println("Directorio destino:", destDir)
+	//fmt.Println("\nDirectorios padres:", parentDirs)
+	//fmt.Println("Directorio destino:", destDir)
 
 	// obtener el contenido por partes para los bloque de 64 bytes
 	content_parts := util.Split_into_Chunks(mkfile.Cont)
-	fmt.Println("\nChunks del contenido:", content_parts)
+	//fmt.Println("\nChunks del contenido:", content_parts)
 
 	usrActive, grpActive, err := global.Get_userid_groupid()
 	if err != nil {
@@ -171,7 +171,7 @@ func Create_File(mkfile *MKFILE, partition_superblock *estructuras.SUPERBLOCK, p
 	}
 
 	//partition_superblock.Print_Inodes(partition_path)
-	partition_superblock.Print_blocks(partition_path)
+	//partition_superblock.Print_blocks(partition_path)
 
 	err = partition_superblock.Serialize(partition_path, int64(mounted_partition.Partition_start))
 	if err != nil {

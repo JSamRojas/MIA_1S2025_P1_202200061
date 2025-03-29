@@ -353,3 +353,94 @@ func (sb *SUPERBLOCK) Found_directory(path string, inode_Index int32, directory 
 	}
 	return int32(-1), nil
 }
+
+// Funcion para recorrer los bloques de un inodo, buscando un archivo y devolver su contenido
+func (sb *SUPERBLOCK) Found_archive(path string, inode_Index int32, dest_Dirs string) (string, error) {
+
+	// creamos una instancia de inode
+	inode := INODE{}
+
+	err := inode.Deserialize(path, int64(sb.Sb_inode_start+(inode_Index*sb.Sb_inode_size)))
+	if err != nil {
+		return "", err
+	}
+
+	// variable para almacenar el contenido del archivo
+	content := ""
+	inode_Archive := -1
+
+	// iteramos sobre cada bloque del inodo
+	for i := 0; i < len(inode.I_block); i++ {
+
+		// si el bloque no existe, nos salimos
+		if inode.I_block[i] == -1 {
+			return "", errors.New("[error comando cat] el archivo que se busca, no existe")
+		}
+
+		// creamos una instancia de folderblock
+		folderblock := &FOLDERBLOCK{}
+
+		// deserializamos el bloque
+		err := folderblock.Deserialize(path, int64(sb.Sb_block_start+(inode.I_block[i]*sb.Sb_block_size)))
+		if err != nil {
+			return "", err
+		}
+
+		for index_content := 2; index_content < len(folderblock.B_content); index_content++ {
+
+			// obtener el contenido del bloque
+			content := folderblock.B_content[index_content]
+
+			// si el contenido esta vacio, retornamos un -1 para indicar que no fue encontrado el directorio
+			if content.B_inodo == -1 {
+				return "", errors.New("[error comando cat] el archivo que se busca, no existe")
+			}
+
+			// convertimos el nombre del bloque y eliminamos caracteres nulos
+			block_Name := strings.Trim(string(content.B_name[:]), "\x00")
+			// convertimos el nombre del directorio y eliminamos caracteres nulos
+			dir_Name := strings.Trim(dest_Dirs, "\x00")
+
+			// si el nombre del contenido coincide con el nombre de la carpeta, entonces devolvemos el numero de inodo al que apunta
+			if strings.EqualFold(block_Name, dir_Name) {
+				inode_Archive = int(content.B_inodo)
+				break
+			}
+
+		}
+
+		if inode_Archive != -1 {
+			break
+		}
+
+	}
+
+	err = inode.Deserialize(path, int64(sb.Sb_inode_start+(int32(inode_Archive)*sb.Sb_inode_size)))
+	if err != nil {
+		return "", nil
+	}
+
+	// iteramos sobre los bloques del inodo
+	for i := 0; i < len(inode.I_block); i++ {
+
+		if inode.I_block[i] == -1 {
+			return content, nil
+		}
+
+		// creamos una instancia de fileblock
+		fileblock := &FILEBLOCK{}
+
+		// deserializamos el bloque
+		err = fileblock.Deserialize(path, int64(sb.Sb_block_start+(inode.I_block[i]*sb.Sb_block_size)))
+		if err != nil {
+			return "", err
+		}
+
+		// agregamos el contenido del bloque a la variable que lo acumula
+		content += strings.Trim(string(fileblock.B_content[:]), "\x00")
+
+	}
+
+	return "", errors.New("[error comando cat] el archivo que se busca, no existe")
+
+}

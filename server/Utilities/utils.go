@@ -32,6 +32,7 @@ func ConvertBytes(size int, unit string) (int, error) {
 
 }
 
+// Funcion para eliminar un disco con su path
 func RemoveDiskFile(path string) (string, error) {
 	err := os.Remove(path)
 	if err != nil {
@@ -49,13 +50,14 @@ func GetLetra(path string) (string, error) {
 			pathToLetter[path] = Alfabeto[nextLetterIndex]
 			nextLetterIndex++
 		} else {
-			return "No hay letras disponibles, demasiados discos", errors.New("no hay letras disponibles, demasiados discos")
+			return "", errors.New("no hay letras disponibles, demasiados discos")
 		}
 	}
 	return pathToLetter[path], nil
 
 }
 
+// Funcion para crear los directorios padres si es necesario
 func Create_Parent_Dir(path string) error {
 	dir := filepath.Dir(path)
 	err := os.MkdirAll(dir, os.ModePerm)
@@ -92,6 +94,7 @@ func Get_Parent_Dirs(path string) ([]string, string) {
 
 }
 
+// Funcion para obtener el nombre que tendra el archivo del reporte a generar
 func Get_File_Names(path string) (string, string) {
 	dir := filepath.Dir(path)
 	baseName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))

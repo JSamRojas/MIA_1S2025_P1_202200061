@@ -102,8 +102,8 @@ func Execute_mkdir(mkdir *MKDIR) (string, error) {
 func Create_directory(DirectPath string, partition_superblock *estructuras.SUPERBLOCK, partition_path string, partition_mounted *estructuras.PARTITION, create_Parents bool) (string, error) {
 
 	parent_Directories, dest_Directory := util.Get_Parent_Dirs(DirectPath)
-	fmt.Println("\nDirectorios padre: ", parent_Directories)
-	fmt.Println("Directorio destino: ", dest_Directory)
+	//fmt.Println("\nDirectorios padre: ", parent_Directories)
+	//fmt.Println("Directorio destino: ", dest_Directory)
 
 	if strings.HasSuffix(dest_Directory, ".txt") {
 		return "", errors.New("[error comando mkdir] el nombre de la carpeta destino, es de un archivo")

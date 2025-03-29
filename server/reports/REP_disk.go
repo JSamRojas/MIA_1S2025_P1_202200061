@@ -64,7 +64,7 @@ func ReporteDISK(mbr *estructuras.MBR, path string, diskPath string) error {
 
 			extendend_Found = true
 			partition_Rows += fmt.Sprintf(`
-			<td colspan="6" bgcolor="#F0E68C" border="1" color="black"><b>EXTENDIDA<br/>%.2f%% del Disco</b></td>`, part_Percentage)
+			<td colspan="20" bgcolor="#F0E68C" border="1" color="black"><b>EXTENDIDA<br/>%.2f%% del Disco</b></td>`, part_Percentage)
 
 			file, err := os.Open(diskPath) // Nos movemos al inicio de la particion extendida
 			if err != nil {

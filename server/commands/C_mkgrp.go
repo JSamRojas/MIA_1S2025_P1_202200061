@@ -183,7 +183,13 @@ func Create_Mkgrp(mkgrp *MKGRP) (string, error) {
 							if G_number == 0 {
 								last_Group += 1
 							}
+
+							if values[2] == mkgrp.Name {
+								return "", fmt.Errorf("[error comando mkgrp] el grupo %s ya existe", mkgrp.Name)
+							}
+
 						}
+
 					}
 
 					// incrementamos el maximo numero de grupo

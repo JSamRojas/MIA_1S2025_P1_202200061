@@ -54,7 +54,7 @@ func (superblock *SUPERBLOCK) Create_Bit_Maps(path string) error {
 	// Se crea el buffer con los ceros '0'
 	buffer = make([]byte, superblock.Sb_free_blocks_count)
 	for i := range buffer {
-		buffer[i] = 'O'
+		buffer[i] = '0'
 	}
 
 	// Se escribe el buffer en el archivo binario
@@ -110,7 +110,7 @@ func (superblock *SUPERBLOCK) Update_Block_Bitmap(path string) error {
 	}
 
 	// Escribimos el bit dentro del archivo
-	_, err = file.Write([]byte{'X'})
+	_, err = file.Write([]byte{'1'})
 	if err != nil {
 		return err
 	}
