@@ -276,3 +276,141 @@ func Get_userid_groupid() (int32, int32, error) {
 
 	return int32(-1), int32(-1), err
 }
+
+// Funcion para obtener usuario y su grupo, partiendo de su id
+func Get_user_group(userid int32, grpid int32) (string, string, error) {
+
+	if userid == 1 {
+		return "root", "root", nil
+	}
+
+	partition_Id := Get_id_Session()
+
+	superblock_partition, _, partition_path, err := Get_superblock_from_part(partition_Id)
+	if err != nil {
+		return "", "", err
+	}
+
+	// creamos una instancia de inode
+	inode := estructuras.INODE{}
+
+	// deserializamos el inode root
+	err = inode.Deserialize(partition_path, int64(superblock_partition.Sb_inode_start+(0*superblock_partition.Sb_inode_size)))
+	if err != nil {
+		return "", "", err
+	}
+
+	// verificamos que le bloque en la primera posicion, si sea el 0
+	if inode.I_block[0] == 0 {
+
+		// creamos una instancia de folderblock
+		folderblock := &estructuras.FOLDERBLOCK{}
+
+		// deserializamos el primer bloque del inode root
+		err = folderblock.Deserialize(partition_path, int64(superblock_partition.Sb_block_start+(inode.I_block[0]*superblock_partition.Sb_block_size)))
+		if err != nil {
+			return "", "", err
+		}
+
+		// recorremos el contenido del bloque 0
+		for _, contenido := range folderblock.B_content {
+
+			name := strings.Trim(string(contenido.B_name[:]), "\x00")
+			apuntador := contenido.B_inodo
+
+			if name == "users.txt" {
+
+				// moverme al inode que apunta el contenido
+				err = inode.Deserialize(partition_path, int64(superblock_partition.Sb_inode_start+(apuntador*superblock_partition.Sb_inode_size)))
+
+				if err != nil {
+					return "", "", err
+				}
+
+				// variable para almacenar el contenido del archivo
+				content_users := ""
+
+				// verificar que el primer inode sea 1
+				if inode.I_block[0] == 1 {
+
+					// ciclo para recorrer todos los bloques que contiene el archivo
+					for _, block := range inode.I_block {
+
+						/*
+							si el bloque tiene un -1, significa que no esta en uso
+							por ende no tiene contenido, salimos del bucle
+						*/
+
+						if block == -1 {
+							break
+						}
+
+						fileblock := &estructuras.FILEBLOCK{}
+
+						err = fileblock.Deserialize(partition_path, int64(superblock_partition.Sb_block_start+(block*superblock_partition.Sb_block_size)))
+						if err != nil {
+							return "", "", err
+						}
+
+						// obtenemos el contenido de este bloque
+						content_users += strings.Trim(string(fileblock.B_content[:]), "\x00")
+
+					}
+
+					// reemplazar los \r\n con \n para asegurar saltos de linea
+					content_users = strings.ReplaceAll(content_users, "\r\n", "\n")
+
+					// Dividir las lineas para obtener cada usuario o grupo
+					lines := strings.Split(content_users, "\n")
+
+					// variables para saber si el usuario y el grupo fueron encontrados
+					usrName := ""
+					grpName := ""
+
+					// ciclo para buscar el nombre del usuario con el id
+					for _, line := range lines {
+
+						// omitimos las lineas en blanco
+						if strings.TrimSpace(line) == "" {
+							continue
+						}
+
+						values := strings.Split(line, ",")
+
+						// verificar si es un usuario y si el numero del usuario coincide
+						if len(values) >= 3 && values[1] == "U" && values[0] == strconv.Itoa(int(userid)) {
+							usrName = values[3]
+							break
+						}
+					}
+
+					// ciclo para buscar el nombre del grupo con el id
+					for _, line := range lines {
+
+						// omitimos las lineas en blanco
+						if strings.TrimSpace(line) == "" {
+							continue
+						}
+
+						values := strings.Split(line, ",")
+
+						// verificar si es un grupo y si el nombre del grupo coincide
+						if len(values) >= 3 && values[1] == "G" && values[0] == strconv.Itoa(int(grpid)) {
+							grpName = values[2]
+
+						}
+
+					}
+
+					if grpName == "" || usrName == "" {
+						return "", "", errors.New("error al obtener el nombre del usuario y el de su grupo")
+					}
+
+					return usrName, grpName, nil
+				}
+			}
+		}
+	}
+
+	return "", "", err
+}

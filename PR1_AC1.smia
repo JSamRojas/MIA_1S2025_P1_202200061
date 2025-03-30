@@ -353,9 +353,9 @@ rep -id=611A -path=/home/jsam_rojas/Calificacion_MIA/Reportes/p4_r1_inode.jpg" -
 rep -id=611A -path=/home/jsam_rojas/Calificacion_MIA/Reportes/p4_r2_block.jpg" -name=block
 rep -id=611A -path=/home/jsam_rojas/Calificacion_MIA/Reportes/p4_r3_bm_inode.txt" -name=bm_inode
 rep -id=611A -path=/home/jsam_rojas/Calificacion_MIA/Reportes/p4_r4_bm_block.txt" -name=bm_bloc
-#rep -id=611A -path=/home/jsam_rojas/Calificacion_MIA/Reportes/p4_r5_sb.jpg" -name=sb
-#rep -id=611A -path=/home/jsam_rojas/Calificacion_MIA/Reportes/p4_r6_file.jpg" -path_file_ls=/home/archivos/user/docs/Tarea2.txt  -name=file
-#rep -id=611A -path=/home/jsam_rojas/Calificacion_MIA/Reportes/p4_r7_ls.jpg" -path_file_ls=/home/archivos/user/docs -name=ls
+rep -id=611A -path=/home/jsam_rojas/Calificacion_MIA/Reportes/p4_r5_sb.jpg" -name=sb
+rep -id=611A -path=/home/jsam_rojas/Calificacion_MIA/Reportes/p4_r6_file.txt" -path_file_ls=/home/archivos/user/docs/Tarea2.txt  -name=file
+rep -id=611A -path=/home/jsam_rojas/Calificacion_MIA/Reportes/p4_r7_ls.jpg" -path_file_ls=/home/archivos/user/docs -name=ls
 #rep -id=611A -path=/home/jsam_rojas/Calificacion_MIA/Reportes/p4_r8_tree.png" -name=tree
 
 

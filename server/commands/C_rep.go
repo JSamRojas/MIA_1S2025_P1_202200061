@@ -43,7 +43,7 @@ func Rep_Command(tokens []string) (*REP, string, error) {
 
 		case "-name":
 
-			validNames := []string{"mbr", "disk", "inode", "block", "bm_inode", "bm_bloc", "sb", "file", "ls"}
+			validNames := []string{"mbr", "disk", "inode", "block", "bm_inode", "bm_bloc", "sb", "file", "ls", "tree"}
 
 			if !contains(validNames, value) {
 				return nil, "ERROR: nombre de reporte invalido: " + value, errors.New("nombre de reporte invalido: " + value)
@@ -64,7 +64,7 @@ func Rep_Command(tokens []string) (*REP, string, error) {
 			}
 			reporte.Path = value
 
-		case "path_file_ls":
+		case "-path_file_ls":
 
 			reporte.Path_file = value
 
@@ -144,6 +144,18 @@ func Get_type_report(reporte *REP) (string, error) {
 
 	case "sb":
 		err = reportes.ReporteSB(sbREP, diskpathREP, reporte.Path)
+		if err != nil {
+			fmt.Printf("ERROR: %s\n", err)
+		}
+
+	case "file":
+		err = reportes.ReporteFILE(sbREP, reporte.Path, reporte.Path_file)
+		if err != nil {
+			fmt.Printf("ERROR: %s\n", err)
+		}
+
+	case "ls":
+		err = reportes.ReporteLS(sbREP, reporte.Path, reporte.Path_file)
 		if err != nil {
 			fmt.Printf("ERROR: %s\n", err)
 		}
